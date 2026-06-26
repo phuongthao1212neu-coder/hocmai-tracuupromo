@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOCMAI — Tra cứu chương trình bán hàng</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════ LOADING OVERLAY ═══════ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Đang tải dữ liệu…</div>
+    <div class="loading-subtext" id="loadingSubtext">Kết nối đến máy chủ</div>
+  </div>
+</div>
+
+<!-- ═══════ LOGIN PAGE ═══════ -->
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <img src="assets/logo.png" alt="HOCMAI" class="login-logo">
+    <div class="login-title">Tra cứu chương trình bán hàng</div>
+    <div class="login-subtitle">Đăng nhập để truy cập hệ thống ưu đãi</div>
+    <form class="login-form" id="loginForm" autocomplete="off">
+      <div class="form-group">
+        <label>Vai trò</label>
+        <div class="role-selector">
+          <label class="role-option active" id="roleTVV">
+            <input type="radio" name="role" value="tvv" checked>
+            <span class="role-icon">💼</span>
+            <span class="role-name">Tư vấn viên</span>
+            <span class="role-desc">Xem mã Cart</span>
+          </label>
+          <label class="role-option" id="roleDS">
+            <input type="radio" name="role" value="ds">
+            <span class="role-icon">🌟</span>
+            <span class="role-name">Đại sứ</span>
+            <span class="role-desc">Xem mã AMS</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="username">Tên đăng nhập</label>
+        <input class="form-control" type="text" id="username" placeholder="Nhập tên đăng nhập" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Mật khẩu</label>
+        <input class="form-control" type="password" id="password" placeholder="Nhập mật khẩu" required>
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="btn-login">Đăng nhập</button>
+    </form>
+    <div class="login-hint">
+      💡 <strong>Hệ thống nội bộ HOCMAI</strong> — Liên hệ quản trị nếu quên mật khẩu
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ APP ═══════ -->
+<div id="appPage" style="display:none">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left header-logo">
+      <img src="assets/logo.png" alt="HOCMAI" class="logo-image">
+    </div>
+    <div class="header-center">
+      <h1>Tra cứu chương trình bán hàng</h1>
+      <p id="headerSubtitle">Dữ liệu mới nhất — <span id="dataDate">—</span></p>
+    </div>
+    <div class="header-right">
+      <span class="header-badge" id="roleBadge">
+        <span class="badge-icon">💼</span>
+        <span id="roleBadgeText">Tư vấn viên</span>
+      </span>
+      <button class="btn-logout" id="btnLogout" title="Đăng xuất">
+        <span>🚪</span> <span>Đăng xuất</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- APP LAYOUT -->
+  <div class="app-layout">
+
+    <!-- MAIN TABS -->
+    <div class="app-topbar">
+      <button class="tab-btn active" data-tab="lookup" id="tabLookup">
+        <span class="tab-icon">📋</span> Tra cứu ưu đãi
+      </button>
+      <button class="tab-btn" data-tab="calc" id="tabCalc">
+        <span class="tab-icon">🧮</span> Tính học phí
+      </button>
+    </div>
+
+    <!-- ═══════ TAB: TRA CỨU ƯU ĐÃI ═══════ -->
+    <div class="panel active" id="panelLookup">
+
+      <!-- Category sub-tabs -->
+      <div class="cat-tabs" id="catTabsLookup">
+        <button class="cat-tab active" data-cat="topuni">Topuni</button>
+        <button class="cat-tab" data-cat="topclass">Topclass</button>
+        <button class="cat-tab" data-cat="giasu">Gia sư</button>
+      </div>
+
+      <!-- Golden day banner -->
+      <div class="banner-group" id="bannerGroup"></div>
+
+      <!-- Search -->
+      <div class="toolbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm, gói ưu đãi…">
+      </div>
+
+      <!-- Promo tables -->
+      <div class="cat-panel active" data-catpanel="topuni" id="catPanelTopuni">
+        <div class="table-wrapper" id="tableWrapTopuni"></div>
+      </div>
+      <div class="cat-panel" data-catpanel="topclass" id="catPanelTopclass">
+        <div class="table-wrapper" id="tableWrapTopclass"></div>
+      </div>
+      <div class="cat-panel" data-catpanel="giasu" id="catPanelGiasu">
+        <div class="table-wrapper" id="tableWrapGiasu"></div>
+      </div>
+    </div>
+
+    <!-- ═══════ TAB: TÍNH HỌC PHÍ ═══════ -->
+    <div class="panel" id="panelCalc">
+
+      <!-- Category sub-tabs -->
+      <div class="cat-tabs" id="catTabsCalc">
+        <button class="cat-tab active" data-cat="topuni">Topuni</button>
+        <button class="cat-tab" data-cat="topclass">Topclass</button>
+        <button class="cat-tab" data-cat="giasu">Gia sư</button>
+      </div>
+
+      <!-- Calc panels -->
+      <div class="cat-panel active" data-catpanel="topuni" id="calcPanelTopuni">
+        <div class="calc-section">
+          <div class="calc-header">
+            <div class="calc-title">Chọn sản phẩm Topuni</div>
+          </div>
+          <div class="calc-grid">
+            <div class="calc-panel calc-panel-select">
+              <div class="product-count" id="prodCountTopuni">0 sản phẩm</div>
+              <ul class="product-list" id="prodListTopuni"></ul>
+            </div>
+            <div class="calc-panel calc-panel-result">
+              <div id="calcResultTopuni">
+                <div class="empty-state">
+                  <div class="empty-icon">🧮</div>
+                  <p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="calc-actions">
+            <button class="btn-calc" id="btnCalcTopuni" disabled>TÍNH HỌC PHÍ</button>
+            <button class="btn-clear" id="btnClearTopuni">Xoá chọn</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cat-panel" data-catpanel="topclass" id="calcPanelTopclass">
+        <div class="calc-section">
+          <div class="calc-header">
+            <div class="calc-title">Chọn sản phẩm Topclass</div>
+          </div>
+          <div class="calc-grid">
+            <div class="calc-panel calc-panel-select">
+              <div class="product-count" id="prodCountTopclass">0 sản phẩm</div>
+              <ul class="product-list" id="prodListTopclass"></ul>
+            </div>
+            <div class="calc-panel calc-panel-result">
+              <div id="calcResultTopclass">
+                <div class="empty-state">
+                  <div class="empty-icon">🧮</div>
+                  <p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="calc-actions">
+            <button class="btn-calc" id="btnCalcTopclass" disabled>TÍNH HỌC PHÍ</button>
+            <button class="btn-clear" id="btnClearTopclass">Xoá chọn</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cat-panel" data-catpanel="giasu" id="calcPanelGiasu">
+        <div class="calc-section">
+          <div class="calc-header">
+            <div class="calc-title">Chọn sản phẩm Gia sư</div>
+          </div>
+          <div class="calc-grid">
+            <div class="calc-panel calc-panel-select">
+              <div class="product-count" id="prodCountGiasu">0 sản phẩm</div>
+              <ul class="product-list" id="prodListGiasu"></ul>
+            </div>
+            <div class="calc-panel calc-panel-result">
+              <div id="calcResultGiasu">
+                <div class="empty-state">
+                  <div class="empty-icon">🧮</div>
+                  <p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="calc-actions">
+            <button class="btn-calc" id="btnCalcGiasu" disabled>TÍNH HỌC PHÍ</button>
+            <button class="btn-clear" id="btnClearGiasu">Xoá chọn</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   HOCMAI Sales Policy Lookup — Single-Page Application
+   ═══════════════════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  // ─── CONFIG ─────────────────────────────────────────────────────────
+  const CREDENTIALS = {
+    tvv: { username: 'tvv',   password: 'tvv@123', label: 'Tư vấn viên',  icon: '💼', codeField: 'code',    codeLabel: 'Mã Cart' },
+    ds:  { username: 'adc',   password: 'adc',     label: 'Đại sứ',      icon: '🌟', codeField: 'amsCode', codeLabel: 'Mã AMS' }
+  };
+  const API_URL = '/api/policies';
+
+  // ─── STATE ──────────────────────────────────────────────────────────
+  let APP_DATA = null;
+  let ROLE = null; // 'tvv' or 'ds'
+  let SEARCH_QUERY = '';
+
+  // ─── HELPERS ────────────────────────────────────────────────────────
+  function $(sel, ctx) { return (ctx || document).querySelector(sel); }
+  function $$(sel, ctx) { return Array.from((ctx || document).querySelectorAll(sel)); }
+
+  function formatPrice(n) {
+    if (n == null || isNaN(n)) return '—';
+    return Number(n).toLocaleString('vi-VN') + 'đ';
+  }
+
+  function showToast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function copyText(text, btn) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      if (btn) { btn.classList.add('copied'); setTimeout(() => btn.classList.remove('copied'), 800); }
+      showToast('Đã sao chép: ' + text);
+    }).catch(() => showToast('Không thể sao chép'));
+  }
+
+  function showLoading(text, sub) {
+    $('#loadingText').textContent = text || 'Đang tải dữ liệu…';
+    $('#loadingSubtext').textContent = sub || 'Kết nối đến máy chủ';
+    $('#loadingOverlay').classList.remove('hidden');
+  }
+  function hideLoading() { $('#loadingOverlay').classList.add('hidden'); }
+
+  // ─── AUTH ───────────────────────────────────────────────────────────
+  function checkSession() {
+    const r = sessionStorage.getItem('hm_role');
+    if (r && CREDENTIALS[r]) { ROLE = r; return true; }
+    return false;
+  }
+
+  function doLogin() {
+    const role = $('input[name="role"]:checked').value;
+    const user = $('#username').value.trim();
+    const pass = $('#password').value;
+    const cred = CREDENTIALS[role];
+    if (user === cred.username && pass === cred.password) {
+      ROLE = role;
+      sessionStorage.setItem('hm_role', role);
+      $('#loginError').textContent = '';
+      startApp();
+    } else {
+      $('#loginError').textContent = 'Sai tên đăng nhập hoặc mật khẩu!';
+      $('#password').value = '';
+      $('#password').focus();
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('hm_role');
+    ROLE = null;
+    $('#loginPage').style.display = '';
+    $('#appPage').style.display = 'none';
+    $('#username').value = '';
+    $('#password').value = '';
+    $('#loginError').textContent = '';
+  }
+
+  // ─── DATA FETCH ─────────────────────────────────────────────────────
+  async function fetchData() {
+    showLoading('Đang tải dữ liệu…', 'Kết nối đến máy chủ');
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      if (json.status !== 'ok') throw new Error(json.error || 'API error');
+      APP_DATA = json;
+      $('#dataDate').textContent = json.today || '—';
+      return true;
+    } catch (err) {
+      console.error('Fetch error:', err);
+      showLoading('Không thể tải dữ liệu', err.message);
+      return false;
+    }
+  }
+
+  // ─── BANNER ─────────────────────────────────────────────────────────
+  function renderBanners() {
+    const wrap = $('#bannerGroup');
+    wrap.innerHTML = '';
+    if (!APP_DATA) return;
+    const cats = ['topuni', 'topclass', 'giasu'];
+    for (const cat of cats) {
+      const promo = APP_DATA.promotions[cat];
+      if (!promo || !promo.activePeriods || promo.activePeriods.length === 0) continue;
+      for (const pname of promo.activePeriods) {
+        const period = (promo.periods || []).find(p => p.name === pname);
+        if (!period) continue;
+        const isGolden = (period.type || '').includes('golden') || pname.toLowerCase().includes('ngày vàng');
+        const div = document.createElement('div');
+        div.className = 'day-banner show ' + (isGolden ? 'golden' : 'normal');
+        div.innerHTML = `
+          <div class="b-icon">${isGolden ? '🌟' : '🟢'}</div>
+          <div class="b-text">
+            <strong>${isGolden ? '🔥 Đang có ưu đãi ngày vàng!' : 'Đang có chương trình ưu đãi!'}</strong>
+            <span>${pname}</span>
+          </div>`;
+        wrap.appendChild(div);
+      }
+    }
+  }
+
+  // ─── PROMO TABLE ────────────────────────────────────────────────────
+  function buildPromoTable(cat) {
+    if (!APP_DATA) return;
+    const role = ROLE;
+    const codeField = CREDENTIALS[role].codeField;
+    const codeLabel = CREDENTIALS[role].codeLabel;
+    const catalog = (APP_DATA.catalogs || {})[cat] || [];
+    const promo = (APP_DATA.promotions || {})[cat] || {};
+    const periods = promo.periods || [];
+    const wrapId = 'tableWrap' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    const wrap = $('#' + wrapId);
+    if (!wrap) return;
+
+    if (periods.length === 0) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có chương trình ưu đãi cho danh mục này</p></div>';
+      return;
+    }
+
+    // Build column structure
+    // periods -> each has custs (new, old, all, upgrade)
+    // We need: Fixed cols + (Period1: NH mới, KH cũ) + (Period2: ...) etc.
+    const fixedHeaders = getFixedHeaders(cat);
+    const periodColumns = [];
+    for (const p of periods) {
+      const pType = p.type || 'unknown';
+      const pName = p.name || '';
+      const custs = p.custs || [];
+      // Group by cust type
+      for (const c of custs) {
+        const ctype = c.type || 'unknown';
+        const ctypeLabel = getCustLabel(ctype);
+        periodColumns.push({ period: p, cust: c, pType, pName, ctype, ctypeLabel });
+      }
+    }
+
+    let html = '<table class="promo-table"><thead>';
+
+    // Row 1: fixed cols + period headers (colspan)
+    html += '<tr>';
+    for (const fh of fixedHeaders) {
+      html += `<th class="th-fixed" rowspan="2">${fh}</th>`;
+    }
+    for (const p of periods) {
+      const pType = p.type || 'unknown';
+      const custCount = (p.custs || []).length || 1;
+      html += `<th class="${pType === 'golden' ? 'th-golden' : 'th-normal'}" colspan="${custCount}">${p.name}</th>`;
+    }
+    html += '</tr>';
+
+    // Row 2: sub-headers per period
+    html += '<tr>';
+    for (const pc of periodColumns) {
+      html += `<th class="${pc.pType === 'golden' ? 'th-golden-sub' : 'th-normal-sub'}">${pc.ctypeLabel}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    // Data rows
+    for (let i = 0; i < catalog.length; i++) {
+      const item = catalog[i];
+      const fixedCols = getFixedCols(cat, item, i);
+      html += '<tr>';
+      for (const fc of fixedCols) {
+        html += `<td>${fc}</td>`;
+      }
+      for (const pc of periodColumns) {
+        // Find promo data for this period/cust
+        const pName = pc.period.name;
+        const ctype = pc.ctype;
+        const promos = item.promotions || {};
+        const periodPromo = promos[pName] || {};
+        const custPromo = periodPromo[ctype] || {};
+        html += renderPromoCell(custPromo, codeField, codeLabel, pc.pType);
+      }
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function getFixedHeaders(cat) {
+    if (cat === 'topuni') return ['Gói ưu đãi', 'Sản phẩm', 'Học phí'];
+    if (cat === 'topclass') return ['Loại SP', 'Gói HP', 'Lớp', 'Môn', 'SL'];
+    if (cat === 'giasu') return ['Tên gói', 'Buổi', 'HP/buổi', 'Tổng HP'];
+    return [];
+  }
+
+  function getFixedCols(cat, item, idx) {
+    if (cat === 'topuni') {
+      return [
+        item.packageName || item.stt || (idx + 1),
+        Array.isArray(item.products) ? item.products.join('<br>') : (item.productName || '—'),
+        formatPrice(item.listPrice)
+      ];
+    }
+    if (cat === 'topclass') {
+      return [
+        item.productType || '—',
+        item.feePackage || '—',
+        item.gradeLevel || '—',
+        item.subject || '—',
+        item.quantity || '—'
+      ];
+    }
+    if (cat === 'giasu') {
+      return [
+        item.name || '—',
+        item.sessions || '—',
+        formatPrice(item.pricePerSession),
+        formatPrice(item.totalListPrice)
+      ];
+    }
+    return [];
+  }
+
+  function renderPromoCell(data, codeField, codeLabel, pType) {
+    if (!data || (data.discount == null && !data[codeField] && data.finalPrice == null)) {
+      return '<td class="promo-cell empty-cell">—</td>';
+    }
+    let discountHtml = '';
+    let priceHtml = '';
+    let codeHtml = '';
+
+    if (data.discount != null) {
+      const cls = pType === 'golden' ? 'tu-price-golden' : 'tu-discount';
+      discountHtml = `<div class="${cls}">-${data.discount}%</div>`;
+    }
+    if (data.finalPrice != null) {
+      const cls = pType === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
+      priceHtml = `<div class="${cls}">HP: ${formatPrice(data.finalPrice)}</div>`;
+    } else if (data.discount != null) {
+      // calculate from listPrice? We don't have it here, just show %
+    }
+
+    const code = data[codeField];
+    if (code) {
+      codeHtml = `
+        <div class="tu-code-row">
+          <span class="tu-code-badge">${code}</span>
+          <button class="copy-icon" title="Sao chép" onclick="copyText('${code}', this)">📋</button>
+        </div>`;
+    }
+
+    const colClass = pType === 'golden' ? 'col-golden' : '';
+    return `<td class="promo-cell ${colClass}">
+      <div class="tu-card">
+        ${discountHtml}${priceHtml}${codeHtml}
+      </div>
+    </td>`;
+  }
+
+  // ─── SEARCH / FILTER ────────────────────────────────────────────────
+  function filterCatalog(cat, query) {
+    if (!APP_DATA) return [];
+    const catalog = (APP_DATA.catalogs || {})[cat] || [];
+    if (!query) return catalog;
+    const q = query.toLowerCase();
+    return catalog.filter(item => {
+      const searchFields = [];
+      if (item.packageName) searchFields.push(item.packageName);
+      if (item.productName) searchFields.push(item.productName);
+      if (item.name) searchFields.push(item.name);
+      if (item.productType) searchFields.push(item.productType);
+      if (item.feePackage) searchFields.push(item.feePackage);
+      if (item.gradeLevel) searchFields.push(item.gradeLevel);
+      if (item.subject) searchFields.push(item.subject);
+      if (Array.isArray(item.products)) searchFields.push(item.products.join(' '));
+      return searchFields.some(f => String(f).toLowerCase().includes(q));
+    });
+  }
+
+  // ─── CALCULATOR ─────────────────────────────────────────────────────
+  function buildCalcProductList(cat) {
+    if (!APP_DATA) return;
+    const catalog = (APP_DATA.catalogs || {})[cat] || [];
+    const listId = 'prodList' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    const countId = 'prodCount' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    const list = $('#' + listId);
+    const countEl = $('#' + countId);
+    if (!list) return;
+
+    list.innerHTML = '';
+    for (let i = 0; i < catalog.length; i++) {
+      const item = catalog[i];
+      const name = getCalcProductName(cat, item);
+      const price = item.listPrice || item.totalListPrice || 0;
+      const li = document.createElement('li');
+      li.className = 'product-item';
+      li.innerHTML = `
+        <input type="checkbox" data-idx="${i}" id="calc_${cat}_${i}">
+        <div class="product-info">
+          <label class="product-name" for="calc_${cat}_${i}">${name}</label>
+          <span class="product-sub">${getCalcProductSub(cat, item)}</span>
+        </div>
+        <div class="product-price">${formatPrice(price)}</div>`;
+      li.addEventListener('click', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        const cb = li.querySelector('input[type="checkbox"]');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+      li.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
+        li.classList.toggle('selected', e.target.checked);
+        updateCalcButton(cat);
+      });
+      list.appendChild(li);
+    }
+    countEl.textContent = catalog.length + ' sản phẩm';
+  }
+
+  function getCalcProductName(cat, item) {
+    if (cat === 'topuni') return item.packageName || item.productName || item.stt || '—';
+    if (cat === 'topclass') return `${item.productType || ''} — ${item.feePackage || ''} (${item.gradeLevel || ''} ${item.subject || ''})`.replace(/ — —/g, '').replace(/\(\s*\)/g, '');
+    if (cat === 'giasu') return item.name || '—';
+    return '—';
+  }
+
+  function getCalcProductSub(cat, item) {
+    if (cat === 'topuni') {
+      const prods = Array.isArray(item.products) ? item.products.join(', ') : (item.productName || '');
+      return prods || '—';
+    }
+    if (cat === 'topclass') return `SL: ${item.quantity || '—'}`;
+    if (cat === 'giasu') return `${item.sessions || '—'} buổi × ${formatPrice(item.pricePerSession)}`;
+    return '';
+  }
+
+  function getSelectedProducts(cat) {
+    const checkboxes = $$(`#calcPanel${cat.charAt(0).toUpperCase() + cat.slice(1)} input[type="checkbox"]:checked`);
+    if (!APP_DATA) return [];
+    const catalog = (APP_DATA.catalogs || {})[cat] || [];
+    return checkboxes.map(cb => {
+      const idx = parseInt(cb.dataset.idx, 10);
+      return catalog[idx];
+    }).filter(Boolean);
+  }
+
+  function updateCalcButton(cat) {
+    const btnId = 'btnCalc' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    const btn = $('#' + btnId);
+    if (!btn) return;
+    const selected = getSelectedProducts(cat);
+    btn.disabled = selected.length === 0;
+  }
+
+  function calcBestPromo(item, activePeriods) {
+    // Find best promo among active periods for both KH mới and KH cũ
+    // Returns { new: {discount, finalPrice, code/amsCode}, old: {discount, finalPrice, code/amsCode} }
+    const promos = item.promotions || {};
+    const result = { new: null, old: null };
+
+    for (const pname of activePeriods) {
+      const periodPromo = promos[pname] || {};
+      // Try to find customer types
+      for (const [ctype, data] of Object.entries(periodPromo)) {
+        if (!data) continue;
+        const key = (ctype === 'new' || ctype === 'all' || ctype === 'upgrade') ? 'new' :
+                    (ctype === 'old' || ctype === 'all') ? 'old' : ctype;
+        if (!result[key]) {
+          result[key] = { ...data, periodName: pname, custType: ctype };
+        }
+      }
+    }
+    return result;
+  }
+
+  function calculateFee(cat) {
+    const selected = getSelectedProducts(cat);
+    if (selected.length === 0) return;
+    const codeField = CREDENTIALS[ROLE].codeField;
+    const codeLabel = CREDENTIALS[ROLE].codeLabel;
+    const promo = (APP_DATA.promotions || {})[cat] || {};
+    const activePeriods = promo.activePeriods || [];
+
+    const rows = [];
+    for (const item of selected) {
+      const listPrice = item.listPrice || item.totalListPrice || 0;
+      const bestPromo = calcBestPromo(item, activePeriods);
+
+      let hpNew = listPrice;
+      let hpOld = listPrice;
+      let saveNew = 0;
+      let saveOld = 0;
+      let codeNew = '—';
+      let codeOld = '—';
+
+      // KH mới
+      if (bestPromo.new) {
+        const d = bestPromo.new;
+        if (d.finalPrice != null && d.finalPrice < listPrice) hpNew = d.finalPrice;
+        else if (d.discount != null) hpNew = Math.round(listPrice * (1 - d.discount / 100));
+        saveNew = listPrice - hpNew;
+        codeNew = d[codeField] || '—';
+      }
+      // KH cũ
+      if (bestPromo.old) {
+        const d = bestPromo.old;
+        if (d.finalPrice != null && d.finalPrice < listPrice) hpOld = d.finalPrice;
+        else if (d.discount != null) hpOld = Math.round(listPrice * (1 - d.discount / 100));
+        saveOld = listPrice - hpOld;
+        codeOld = d[codeField] || '—';
+      }
+
+      rows.push({ name: getCalcProductName(cat, item), listPrice, hpNew, hpOld, saveNew, saveOld, codeNew, codeOld });
+    }
+
+    renderCalcResult(cat, rows, codeLabel);
+  }
+
+  function renderCalcResult(cat, rows, codeLabel) {
+    const containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    const container = $('#' + containerId);
+    if (!container) return;
+
+    let totalOriginal = 0, totalNew = 0, totalOld = 0, totalSaveNew = 0, totalSaveOld = 0;
+
+    let html = '<div class="table-wrapper"><table class="result-table"><thead><tr>';
+    html += '<th>Sản phẩm</th>';
+    html += '<th>Học phí gốc</th>';
+    html += '<th>KH mới (HP)</th>';
+    html += '<th>KH cũ (HP)</th>';
+    html += '<th>Tiết kiệm KH mới</th>';
+    html += `<th>${codeLabel} mới</th>`;
+    html += `<th>${codeLabel} cũ</th>`;
+    html += '</tr></thead><tbody>';
+
+    for (const r of rows) {
+      totalOriginal += r.listPrice;
+      totalNew += r.hpNew;
+      totalOld += r.hpOld;
+      totalSaveNew += r.saveNew;
+      totalSaveOld += r.saveOld;
+
+      html += '<tr>';
+      html += `<td style="text-align:left;font-weight:600">${r.name}</td>`;
+      html += `<td class="price-original">${formatPrice(r.listPrice)}</td>`;
+      html += `<td class="price-final">${formatPrice(r.hpNew)}</td>`;
+      html += `<td class="price-final">${formatPrice(r.hpOld)}</td>`;
+      html += `<td class="price-save">${r.saveNew > 0 ? '-' + formatPrice(r.saveNew) : '—'}</td>`;
+      html += `<td><span class="tu-code-badge">${r.codeNew}</span>
+        ${r.codeNew !== '—' ? `<button class="copy-icon" title="Sao chép" onclick="copyText('${r.codeNew}', this)">📋</button>` : ''}</td>`;
+      html += `<td><span class="tu-code-badge">${r.codeOld}</span>
+        ${r.codeOld !== '—' ? `<button class="copy-icon" title="Sao chép" onclick="copyText('${r.codeOld}', this)">📋</button>` : ''}</td>`;
+      html += '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+
+    // Summary
+    html += '<div class="summary-row">';
+    html += `<div class="summary-item"><span class="s-label">Tổng HP gốc</span><span class="s-value">${formatPrice(totalOriginal)}</span></div>`;
+    html += `<div class="summary-item"><span class="s-label">Tổng HP KH mới</span><span class="s-value green">${formatPrice(totalNew)}</span></div>`;
+    html += `<div class="summary-item"><span class="s-label">Tổng HP KH cũ</span><span class="s-value">${formatPrice(totalOld)}</span></div>`;
+    html += `<div class="summary-item"><span class="s-label">Ti tiết kiệm KH mới</span><span class="s-value green">-${formatPrice(totalSaveNew)}</span></div>`;
+    html += `<div class="summary-item"><span class="s-label">Tiết kiệm KH cũ</span><span class="s-value green">-${formatPrice(totalSaveOld)}</span></div>`;
+    html += '</div>';
+
+    container.innerHTML = html;
+  }
+
+  function clearCalc(cat) {
+    const checkboxes = $$(`#calcPanel${cat.charAt(0).toUpperCase() + cat.slice(1)} input[type="checkbox"]:checked`);
+    checkboxes.forEach(cb => { cb.checked = false; cb.closest('.product-item')?.classList.remove('selected'); });
+    updateCalcButton(cat);
+    const containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    const container = $('#' + containerId);
+    if (container) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>';
+    }
+  }
+
+  // ─── UI SETUP ───────────────────────────────────────────────────────
+  function setupEventListeners() {
+    // Login
+    $('#loginForm').addEventListener('submit', (e) => { e.preventDefault(); doLogin(); });
+    $('#roleTVV').addEventListener('click', () => {
+      $('#roleTVV').classList.add('active');
+      $('#roleDS').classList.remove('active');
+      $('#roleTVV input').checked = true;
+    });
+    $('#roleDS').addEventListener('click', () => {
+      $('#roleDS').classList.add('active');
+      $('#roleTVV').classList.remove('active');
+      $('#roleDS input').checked = true;
+    });
+
+    // Logout
+    $('#btnLogout').addEventListener('click', doLogout);
+
+    // Main tabs
+    $$('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        $$('.panel').forEach(p => p.classList.remove('active'));
+        const panel = tab === 'lookup' ? $('#panelLookup') : $('#panelCalc');
+        panel.classList.add('active');
+        // Rebuild sub-tabs for calc
+        if (tab === 'calc') {
+          ['topuni', 'topclass', 'giasu'].forEach(c => buildCalcProductList(c));
+        }
+      });
+    });
+
+    // Category tabs — Lookup
+    $$('#catTabsLookup .cat-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('#catTabsLookup .cat-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const cat = btn.dataset.cat;
+        $$('#panelLookup .cat-panel').forEach(p => p.classList.remove('active'));
+        $(`#panelLookup .cat-panel[data-catpanel="${cat}"]`).classList.add('active');
+      });
+    });
+
+    // Category tabs — Calc
+    $$('#catTabsCalc .cat-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('#catTabsCalc .cat-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const cat = btn.dataset.cat;
+        $$('#panelCalc .cat-panel').forEach(p => p.classList.remove('active'));
+        $(`#panelCalc .cat-panel[data-catpanel="${cat}"]`).classList.add('active');
+        buildCalcProductList(cat);
+      });
+    });
+
+    // Search
+    $('#searchInput').addEventListener('input', (e) => {
+      SEARCH_QUERY = e.target.value.trim();
+      rebuildVisibleTables();
+    });
+
+    // Calc buttons
+    ['topuni', 'topclass', 'giasu'].forEach(cat => {
+      const btnId = 'btnCalc' + cat.charAt(0).toUpperCase() + cat.slice(1);
+      const clearId = 'btnClear' + cat.charAt(0).toUpperCase() + cat.slice(1);
+      const btn = $('#' + btnId);
+      const clear = $('#' + clearId);
+      if (btn) btn.addEventListener('click', () => calculateFee(cat));
+      if (clear) clear.addEventListener('click', () => clearCalc(cat));
+    });
+  }
+
+  function rebuildVisibleTables() {
+    // Rebuild the currently visible promo table with filter
+    if (!APP_DATA) return;
+    const activeCatTab = $('#catTabsLookup .cat-tab.active');
+    if (!activeCatTab) return;
+    const cat = activeCatTab.dataset.cat;
+    const filtered = filterCatalog(cat, SEARCH_QUERY);
+    buildFilteredTable(cat, filtered);
+  }
+
+  function buildFilteredTable(cat, items) {
+    const role = ROLE;
+    const codeField = CREDENTIALS[role].codeField;
+    const codeLabel = CREDENTIALS[role].codeLabel;
+    const promo = (APP_DATA.promotions || {})[cat] || {};
+    const periods = promo.periods || [];
+    const wrapId = 'tableWrap' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    const wrap = $('#' + wrapId);
+    if (!wrap) return;
+
+    if (periods.length === 0) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có chương trình ưu đãi cho danh mục này</p></div>';
+      return;
+    }
+
+    if (items.length === 0) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>Không tìm thấy sản phẩm phù hợp</p></div>';
+      return;
+    }
+
+    const fixedHeaders = getFixedHeaders(cat);
+    const periodColumns = [];
+    for (const p of periods) {
+      const pType = p.type || 'unknown';
+      const pName = p.name || '';
+      const custs = p.custs || [];
+      for (const c of custs) {
+        const ctype = c.type || 'unknown';
+        const ctypeLabel = getCustLabel(ctype);
+        periodColumns.push({ period: p, cust: c, pType, pName, ctype, ctypeLabel });
+      }
+    }
+
+    let html = '<table class="promo-table"><thead>';
+    html += '<tr>';
+    for (const fh of fixedHeaders) {
+      html += `<th class="th-fixed" rowspan="2">${fh}</th>`;
+    }
+    for (const p of periods) {
+      const pType = p.type || 'unknown';
+      const custCount = (p.custs || []).length || 1;
+      html += `<th class="${pType === 'golden' ? 'th-golden' : 'th-normal'}" colspan="${custCount}">${p.name}</th>`;
+    }
+    html += '</tr>';
+    html += '<tr>';
+    for (const pc of periodColumns) {
+      html += `<th class="${pc.pType === 'golden' ? 'th-golden-sub' : 'th-normal-sub'}">${pc.ctypeLabel}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const fixedCols = getFixedCols(cat, item, i);
+      html += '<tr>';
+      for (const fc of fixedCols) {
+        html += `<td>${fc}</td>`;
+      }
+      for (const pc of periodColumns) {
+        const pName = pc.period.name;
+        const ctype = pc.ctype;
+        const promos = item.promotions || {};
+        const periodPromo = promos[pName] || {};
+        const custPromo = periodPromo[ctype] || {};
+        html += renderPromoCell(custPromo, codeField, codeLabel, pc.pType);
+      }
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function getCustLabel(ctype) {
+    switch (ctype) {
+      case 'new':     return 'KH mới';
+      case 'old':     return 'KH cũ';
+      case 'all':     return 'Mọi KH';
+      case 'upgrade': return 'Nâng cấp';
+      default:        return ctype;
+    }
+  }
+
+  // ─── INIT ───────────────────────────────────────────────────────────
+  async function startApp() {
+    $('#loginPage').style.display = 'none';
+    $('#appPage').style.display = '';
+
+    // Update role badge
+    const cred = CREDENTIALS[ROLE];
+    $('#roleBadgeText').textContent = cred.label;
+    $('#roleBadge .badge-icon').textContent = cred.icon;
+
+    const success = await fetchData();
+    if (!success) return;
+
+    hideLoading();
+    renderBanners();
+    ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
+    ['topuni', 'topclass', 'giasu'].forEach(c => buildCalcProductList(c));
+  }
+
+  // Expose copyText globally for onclick
+  window.copyText = copyText;
+
+  // Setup
+  setupEventListeners();
+
+  // Auto-login if session exists
+  if (checkSession()) {
+    startApp();
+  } else {
+    hideLoading();
+  }
+
+})();
+</script>
+
+</body>
+</html>

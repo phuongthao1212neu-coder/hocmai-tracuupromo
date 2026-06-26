@@ -1,0 +1,336 @@
+{
+  "updatedAt": "2026-06-26T17:47:31.369810",
+  "topuni_catalog": [
+    {
+      "name": "Nền tảng Tiết học 8",
+      "listPrice": 1311358,
+      "grade": "8",
+      "subject": "Tiết học",
+      "productType": "Nền tảng",
+      "feePackage": "Gói C",
+      "form": "Offline"
+    },
+    {
+      "name": "Nền tảng Tiết học 8",
+      "listPrice": 3261926,
+      "grade": "8",
+      "subject": "Tiết học",
+      "productType": "Nền tảng",
+      "feePackage": "Gói B",
+      "form": "Online"
+    },
+    {
+      "name": "Nền tảng Toán 6",
+      "listPrice": 2645162,
+      "grade": "6",
+      "subject": "Toán",
+      "productType": "Nền tảng",
+      "feePackage": "Gói B",
+      "form": "Hybrid"
+    },
+    {
+      "name": "Chuyên sâu Ngữ văn 6",
+      "listPrice": 2250871,
+      "grade": "6",
+      "subject": "Ngữ văn",
+      "productType": "Chuyên sâu",
+      "feePackage": "Gói A",
+      "form": "Hybrid"
+    },
+    {
+      "name": "Chuyên sâu Môn tự chọn 7",
+      "listPrice": 1780363,
+      "grade": "7",
+      "subject": "Môn tự chọn",
+      "productType": "Chuyên sâu",
+      "feePackage": "Gói C",
+      "form": "Online"
+    }
+  ],
+  "topuni": [
+    [
+      "col_fixed_0",
+      "col_fixed_1",
+      "col_fixed_2",
+      "col_fixed_3",
+      "col_fixed_4",
+      "Khuyến học ngày vàng (15/06-20/06/2026)",
+      "",
+      "Khuyến học ngày thường (21/06-30/06/2026)",
+      ""
+    ],
+    [
+      "fixed",
+      "fixed",
+      "fixed",
+      "fixed",
+      "fixed",
+      "Ưu đãi",
+      "Mã AMS",
+      "Ưu đãi",
+      "Mã AMS"
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Học viên mới",
+      "Học viên cũ",
+      "Học viên mới",
+      "Học viên cũ"
+    ],
+    [
+      "1",
+      "Nâng cao Ngữ văn 7",
+      1860654,
+      "Thành phần A + B",
+      1860654,
+      "0.20",
+      "AMS-2237",
+      "0.05",
+      "AMS-9720"
+    ],
+    [
+      "2",
+      "Chuyên sâu Ngữ văn 8",
+      1343415,
+      "Thành phần A + B",
+      1343415,
+      "0.20",
+      "AMS-6153",
+      "0.05",
+      "AMS-5601"
+    ],
+    [
+      "3",
+      "Nền tảng Tiết học 6",
+      2040769,
+      "Thành phần A + B",
+      2040769,
+      "0.20",
+      "AMS-2049",
+      "0.05",
+      "AMS-7895"
+    ],
+    [
+      "4",
+      "Nâng cao Toán 7",
+      3430450,
+      "Thành phần A + B",
+      3430450,
+      "0.20",
+      "AMS-2317",
+      "0.05",
+      "AMS-4176"
+    ]
+  ],
+  "topclass_catalog": [
+    {
+      "productType": "Lý",
+      "feePackage": "Cá nhân",
+      "gradeLevel": "10",
+      "subject": "Lý",
+      "quantity": 119
+    },
+    {
+      "productType": "Hóa",
+      "feePackage": "Nhóm",
+      "gradeLevel": "12",
+      "subject": "Hóa",
+      "quantity": 80
+    },
+    {
+      "productType": "Ngữ văn",
+      "feePackage": "Nhóm",
+      "gradeLevel": "11",
+      "subject": "Ngữ văn",
+      "quantity": 42
+    },
+    {
+      "productType": "Sử",
+      "feePackage": "Lớp",
+      "gradeLevel": "11",
+      "subject": "Sử",
+      "quantity": 98
+    },
+    {
+      "productType": "Lý",
+      "feePackage": "Lớp",
+      "gradeLevel": "11",
+      "subject": "Lý",
+      "quantity": 78
+    }
+  ],
+  "topclass": [
+    [
+      "col_fixed_0",
+      "col_fixed_1",
+      "col_fixed_2",
+      "col_fixed_3",
+      "col_fixed_4",
+      "Khuyến học ngày vàng (01/07-07/07/2026)",
+      "Khuyến học ngày vàng (01/07-07/07/2026)",
+      "Khuyến học ngày thường (08/07-20/07/2026)",
+      "Khuyến học ngày thường (08/07-20/07/2026)"
+    ],
+    [
+      "fixed",
+      "fixed",
+      "fixed",
+      "fixed",
+      "fixed",
+      "Ưu đãi",
+      "Mã AMS",
+      "Ưu đãi",
+      "Mã AMS"
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Học viên mới",
+      "Học viên cũ",
+      "Học viên mới",
+      "Học viên cũ"
+    ],
+    [
+      "1",
+      "Ngữ văn",
+      "Cá nhân",
+      "11",
+      "Ngữ văn",
+      "0.20",
+      "AMS-6030",
+      "0.07",
+      "AMS-9736"
+    ],
+    [
+      "2",
+      "Hóa",
+      "Cá nhân",
+      "11",
+      "Hóa",
+      "0.20",
+      "AMS-2783",
+      "0.07",
+      "AMS-4735"
+    ],
+    [
+      "3",
+      "Sử",
+      "Cá nhân",
+      "11",
+      "Sử",
+      "0.20",
+      "AMS-9982",
+      "0.07",
+      "AMS-5814"
+    ],
+    [
+      "4",
+      "Toán",
+      "Cá nhân",
+      "11",
+      "Toán",
+      "0.20",
+      "AMS-1279",
+      "0.07",
+      "AMS-4775"
+    ]
+  ],
+  "giasu_catalog": [
+    {
+      "name": "Gia sư Toán 6",
+      "sessions": 39,
+      "pricePerSession": 426314,
+      "totalListPrice": 16626246
+    },
+    {
+      "name": "Gia sư Ngữ văn 7",
+      "sessions": 48,
+      "pricePerSession": 492933,
+      "totalListPrice": 23660784
+    },
+    {
+      "name": "Gia sư Vật lý 12",
+      "sessions": 51,
+      "pricePerSession": 264356,
+      "totalListPrice": 13482156
+    },
+    {
+      "name": "Gia sư Hóa 10",
+      "sessions": 43,
+      "pricePerSession": 455104,
+      "totalListPrice": 19569472
+    }
+  ],
+  "giasu": [
+    [
+      "col_fixed_0",
+      "col_fixed_1",
+      "col_fixed_2",
+      "col_fixed_3",
+      "Khuyến học ngày vàng (10/07-15/07/2026)",
+      "Khuyến học ngày vàng (10/07-15/07/2026)",
+      "Khuyến học ngày thường (16/07-30/07/2026)",
+      "Khuyến học ngày thường (16/07-30/07/2026)"
+    ],
+    [
+      "fixed",
+      "fixed",
+      "fixed",
+      "fixed",
+      "Ưu đãi",
+      "Mã AMS",
+      "Ưu đãi",
+      "Mã AMS"
+    ],
+    [
+      "",
+      "",
+      "",
+      "",
+      "Học viên mới",
+      "Học viên cũ",
+      "Học viên mới",
+      "Học viên cũ"
+    ],
+    [
+      "1",
+      "Gia sư Toán 6",
+      33,
+      240941,
+      7951053,
+      "0.25",
+      "AMS-7651",
+      "0.10",
+      "AMS-9678"
+    ],
+    [
+      "2",
+      "Gia sư Ngữ văn 7",
+      60,
+      337628,
+      20257680,
+      "0.25",
+      "AMS-4342",
+      "0.10",
+      "AMS-2649"
+    ],
+    [
+      "3",
+      "Gia sư Vật lý 12",
+      40,
+      367635,
+      14705400,
+      "0.25",
+      "AMS-2380",
+      "0.10",
+      "AMS-8079"
+    ]
+  ]
+}

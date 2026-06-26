@@ -1,0 +1,17 @@
+{
+  "name": "hocmai-sales-lookup",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hệ thống tra cứu chính sách bán hàng HOCMAI - dành cho Tư vấn viên + Đại sứ",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["hocmai", "sales", "lookup", "products", "discount", "pricing"],
+  "author": "HOCMAI",
+  "license": "UNLICENSED"
+}

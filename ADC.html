@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADC — Tra cứu chương trình bán hàng HOCMAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ========== ROLE OVERRIDES: Đại sứ ========== -->
+  <style>
+    :root {
+      --hm-primary: #7C3AED;
+      --hm-primary-dark: #6D28D9;
+      --hm-primary-soft: #F5F3FF;
+      --hm-primary-light: #EDE9FE;
+    }
+    .header {
+      background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%) !important;
+      box-shadow: 0 8px 28px rgba(124,58,237,.25) !important;
+    }
+    .tab-btn.active {
+      color: var(--hm-primary) !important;
+      border-bottom-color: var(--hm-primary) !important;
+    }
+    .cat-tab.active {
+      background: linear-gradient(135deg, var(--hm-primary), var(--hm-primary-dark)) !important;
+      box-shadow: 0 3px 10px rgba(124,58,237,.22) !important;
+    }
+    .btn-calc {
+      background: linear-gradient(135deg, var(--hm-primary), var(--hm-primary-dark)) !important;
+      box-shadow: 0 3px 10px rgba(124,58,237,.22) !important;
+    }
+    .btn-calc:hover {
+      box-shadow: 0 4px 14px rgba(124,58,237,.3) !important;
+    }
+    .th-normal {
+      background: linear-gradient(180deg, #8B5CF6 0%, #7C3AED 100%) !important;
+    }
+    .day-banner.normal .b-icon { background: #EDE9FE !important; }
+    .tu-code-badge {
+      background: #F5F3FF !important;
+      color: #6D28D9 !important;
+      border-color: #DDD6FE !important;
+    }
+    .copy-icon:hover {
+      border-color: var(--hm-primary) !important;
+      background: var(--hm-primary-soft) !important;
+    }
+    .product-item.selected { background: #F5F3FF !important; }
+    .product-item input[type="checkbox"] { accent-color: var(--hm-primary) !important; }
+    .btn-login {
+      background: linear-gradient(135deg, var(--hm-primary), var(--hm-primary-dark)) !important;
+      box-shadow: 0 4px 14px rgba(124,58,237,.25) !important;
+    }
+    .btn-login:hover {
+      box-shadow: 0 6px 20px rgba(124,58,237,.35) !important;
+    }
+    .role-option.active { border-color: var(--hm-primary) !important; background: var(--hm-primary-soft) !important; }
+    .spinner { border-top-color: var(--hm-primary) !important; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ LOADING OVERLAY ═══════ -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <div class="loading-text">Đang tải dữ liệu...</div>
+    <div class="loading-subtext">Vui lòng đợi trong giây lát</div>
+  </div>
+</div>
+
+<!-- ═══════ APP (main view) ═══════ -->
+<div id="appMain" style="display:none;">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="12" fill="white" fill-opacity="0.2"/>
+          <text x="24" y="30" text-anchor="middle" fill="white" font-size="22" font-weight="800" font-family="Inter,sans-serif">H</text>
+        </svg>
+        <span style="font-size:13px;font-weight:700;color:#fff;opacity:.85;line-height:1.2;">
+          HỌC MÃI<br><span style="font-size:10px;opacity:.7;">ĐẠI SỨ</span>
+        </span>
+      </div>
+    </div>
+    <div class="header-center">
+      <h1>Tra cứu chương trình bán hàng</h1>
+      <p>Dành cho Đại sứ HOCMAI — Tra cứu ưu đãi, tính học phí</p>
+    </div>
+    <div class="header-right">
+      <span class="header-badge">
+        <span class="badge-icon">🎯</span>
+        Đại sứ
+      </span>
+      <button class="btn-logout" onclick="handleLogout()">
+        🚪 Đăng xuất
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <div class="app-layout">
+    <!-- BANNER -->
+    <div class="banner-group">
+      <div id="dayBannerGolden" class="day-banner golden">
+        <span class="b-icon">🌟</span>
+        <div class="b-text">
+          <strong>🌟 Ngày Vàng đang diễn ra!</strong>
+          <span>Áp dụng ưu đãi đặc biệt — nhấn copy mã AMS để gửi cho khách hàng</span>
+        </div>
+      </div>
+      <div id="dayBannerNormal" class="day-banner normal">
+        <span class="b-icon">📅</span>
+        <div class="b-text">
+          <strong>Chương trình ưu đãi Ngày Thường</strong>
+          <span>Các ưu đãi đang hiệu lực cho hôm nay</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS: Main -->
+    <div class="app-topbar">
+      <button class="tab-btn active" data-tab="tra-cuu" onclick="switchTab(this)">
+        <span class="tab-icon">📋</span> Tra cứu ưu đãi
+      </button>
+      <button class="tab-btn" data-tab="tinh-hoc-phi" onclick="switchTab(this)">
+        <span class="tab-icon">🧮</span> Tính học phí
+      </button>
+    </div>
+
+    <!-- 🔷 PANEL: Tra cứu ưu đãi -->
+    <div id="panelTraCuu" class="panel active">
+      <!-- Category tabs -->
+      <div class="cat-tabs">
+        <button class="cat-tab active" data-cat="topuni" onclick="switchCat(this)">Topuni</button>
+        <button class="cat-tab" data-cat="topclass" onclick="switchCat(this)">Topclass</button>
+        <button class="cat-tab" data-cat="giasu" onclick="switchCat(this)">Gia sư</button>
+      </div>
+
+      <!-- Search -->
+      <div class="toolbar-search">
+        <span class="search-icon">🔍</span>
+        <input id="searchInput" type="text" placeholder="Tìm kiếm sản phẩm, gói ưu đãi..." oninput="filterTable()" />
+      </div>
+
+      <!-- Bảng Topuni -->
+      <div id="catTopuni" class="cat-panel active">
+        <div class="table-wrapper">
+          <table id="tableTopuni" class="promo-table">
+            <thead id="theadTopuni"></thead>
+            <tbody id="tbodyTopuni"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Bảng Topclass -->
+      <div id="catTopclass" class="cat-panel">
+        <div class="table-wrapper">
+          <table id="tableTopclass" class="promo-table">
+            <thead id="theadTopclass"></thead>
+            <tbody id="tbodyTopclass"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Bảng Gia sư -->
+      <div id="catGiasu" class="cat-panel">
+        <div class="table-wrapper">
+          <table id="tableGiasu" class="promo-table">
+            <thead id="theadGiasu"></thead>
+            <tbody id="tbodyGiasu"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔷 PANEL: Tính học phí -->
+    <div id="panelTinhHocPhi" class="panel">
+      <div class="calc-section">
+        <div class="calc-header">
+          <div class="calc-title">🧮 Tính học phí sau ưu đãi</div>
+        </div>
+        <div class="calc-grid">
+          <!-- Chọn sản phẩm -->
+          <div class="calc-panel calc-panel-select">
+            <div class="cat-tabs" style="margin-bottom:12px;">
+              <button class="cat-tab active" data-cat="topuni" onclick="switchCalcCat(this)">Topuni</button>
+              <button class="cat-tab" data-cat="topclass" onclick="switchCalcCat(this)">Topclass</button>
+              <button class="cat-tab" data-cat="giasu" onclick="switchCalcCat(this)">Gia sư</button>
+            </div>
+            <div id="calcProductList" class="product-list">
+              <!-- Rendered by JS -->
+            </div>
+            <div class="product-count" id="calcCount">Đã chọn: 0 sản phẩm</div>
+            <div class="calc-actions">
+              <button class="btn-calc" id="btnCalc" onclick="calculate()">🔢 TÍNH HỌC PHÍ</button>
+              <button class="btn-clear" onclick="clearCalc()">🗑️ Xoá chọn</button>
+            </div>
+          </div>
+          <!-- Kết quả -->
+          <div class="calc-panel calc-panel-result" id="calcResultPanel">
+            <div class="empty-state" id="calcEmptyState">
+              <div class="empty-icon">📊</div>
+              <p>Chọn sản phẩm và nhấn "TÍNH HỌC PHÍ" để xem kết quả</p>
+            </div>
+            <div id="calcResultArea" style="display:none;">
+              <table id="calcResultTable" class="result-table">
+                <thead>
+                  <tr>
+                    <th>Sản phẩm</th>
+                    <th>Học phí gốc</th>
+                    <th>KH mới (HP)</th>
+                    <th>KH cũ (HP)</th>
+                    <th>Tiết kiệm KH mới</th>
+                    <th>Mã AMS</th>
+                  </tr>
+                </thead>
+                <tbody id="calcResultBody"></tbody>
+              </table>
+              <div class="summary-row" id="calcSummary">
+                <div class="summary-item">
+                  <span class="s-label">🏷️ Tổng HP gốc</span>
+                  <span class="s-value" id="sumOriginal">0₫</span>
+                </div>
+                <div class="summary-item">
+                  <span class="s-label">🆕 Tổng HP KH mới</span>
+                  <span class="s-value green" id="sumNew">0₫</span>
+                </div>
+                <div class="summary-item">
+                  <span class="s-label">🔄 Tổng HP KH cũ</span>
+                  <span class="s-value green" id="sumOld">0₫</span>
+                </div>
+                <div class="summary-item">
+                  <span class="s-label">💰 Tiết kiệm tối đa</span>
+                  <span class="s-value green" id="sumSave">0₫</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ TOAST ═══════ -->
+<div id="toast" class="toast"></div>
+
+<!-- ═══════ JAVASCRIPT ═══════ -->
+<script>
+// ========================================================================
+//  ĐẠI SỨ (ADC) — Sales Policy Lookup
+//  Role preset: ds → hiển thị mã AMS
+// ========================================================================
+
+const ROLE = 'ds'; // Ưu đãi: lấy mã AMS
+const API_URL = '/api/policies';
+const HOCMAI_LOGO = '';
+
+// ---------- STATE ----------
+let allData = null;           // API response full
+let activeCategory = 'topuni';
+let selectedCalcItems = [];
+
+// ---------- INIT ----------
+document.addEventListener('DOMContentLoaded', init);
+
+async function init() {
+  await loadData();
+  hideLoading();
+  document.getElementById('appMain').style.display = '';
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch(API_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    allData = await resp.json();
+    if (allData.status !== 'ok') throw new Error(allData.error || 'API error');
+    renderBanners();
+    renderAllTables();
+    renderCalcProducts('topuni');
+  } catch (err) {
+    console.error('Load error:', err);
+    alert('Không thể tải dữ liệu. Vui lòng thử lại sau.\n' + err.message);
+  }
+}
+
+function hideLoading() {
+  const lo = document.getElementById('loadingOverlay');
+  lo.classList.add('hidden');
+  setTimeout(() => { lo.style.display = 'none'; }, 400);
+}
+
+// ---------- TOAST ----------
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ---------- COPY ----------
+async function copyText(text, btnEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    btnEl.textContent = '✅';
+    btnEl.classList.add('copied');
+    showToast('✅ Đã copy mã: ' + text);
+    setTimeout(() => {
+      btnEl.textContent = '📋';
+      btnEl.classList.remove('copied');
+    }, 1500);
+  } catch {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    btnEl.textContent = '✅';
+    btnEl.classList.add('copied');
+    showToast('✅ Đã copy mã: ' + text);
+    setTimeout(() => {
+      btnEl.textContent = '📋';
+      btnEl.classList.remove('copied');
+    }, 1500);
+  }
+}
+
+// ---------- FORMAT ----------
+function formatPrice(v) {
+  if (v === null || v === undefined || v === 0) return '—';
+  return new Intl.NumberFormat('vi-VN').format(v) + '₫';
+}
+
+function formatDiscount(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'number') return '-' + Math.round(v * 100) / 100 + '%';
+  return String(v);
+}
+
+// ---------- BANNERS ----------
+function renderBanners() {
+  const golden = document.getElementById('dayBannerGolden');
+  const normal = document.getElementById('dayBannerNormal');
+  golden.classList.remove('show');
+  normal.classList.remove('show');
+
+  if (!allData || !allData.promotions) return;
+
+  for (const key of ['topuni', 'topclass', 'giasu']) {
+    const promos = allData.promotions[key];
+    if (!promos || !promos.activePeriods) continue;
+    for (const pName of promos.activePeriods) {
+      const period = promos.periods.find(p => p.name === pName);
+      if (!period) continue;
+      if (period.type === 'golden') {
+        golden.classList.add('show');
+      } else {
+        normal.classList.add('show');
+      }
+    }
+  }
+}
+
+// ---------- PERIOD HEADERS ----------
+function getActivePeriods(catKey) {
+  if (!allData || !allData.promotions || !allData.promotions[catKey]) return [];
+  return allData.promotions[catKey].activePeriods || [];
+}
+
+function getAllPeriods(catKey) {
+  if (!allData || !allData.promotions || !allData.promotions[catKey]) return [];
+  return allData.promotions[catKey].periods || [];
+}
+
+// ---------- RENDER TABLES ----------
+function renderAllTables() {
+  for (const cat of ['topuni', 'topclass', 'giasu']) {
+    renderTable(cat);
+  }
+}
+
+function getFixedColumns(cat) {
+  if (cat === 'topuni') {
+    return [
+      { label: 'Gói ưu đãi', key: 'packageName', width: '180px' },
+      { label: 'Sản phẩm trong gói', key: 'products', width: '200px' },
+      { label: 'Học phí niêm yết', key: 'listPrice', width: '140px' }
+    ];
+  } else if (cat === 'topclass') {
+    return [
+      { label: 'Loại SP', key: 'productType', width: '120px' },
+      { label: 'Gói HP', key: 'feePackage', width: '130px' },
+      { label: 'Khối lớp', key: 'gradeLevel', width: '100px' },
+      { label: 'Môn học', key: 'subject', width: '120px' },
+      { label: 'SL', key: 'quantity', width: '60px' }
+    ];
+  } else { // giasu
+    return [
+      { label: 'Tên gói', key: 'name', width: '200px' },
+      { label: 'Buổi', key: 'sessions', width: '70px' },
+      { label: 'Giá/buổi', key: 'pricePerSession', width: '110px' },
+      { label: 'Tổng HP gốc', key: 'totalListPrice', width: '140px' }
+    ];
+  }
+}
+
+function renderTable(cat) {
+  const thead = document.getElementById('thead' + capitalize(cat));
+  const tbody = document.getElementById('tbody' + capitalize(cat));
+  if (!thead || !tbody) return;
+
+  const periods = getAllPeriods(cat);
+  const activePeriods = getActivePeriods(cat);
+  const items = allData?.promotions?.[cat]?.items || [];
+
+  // Build header
+  const fixedCols = getFixedColumns(cat);
+
+  // Row 1: Period headers (merged)
+  let htmlHeader1 = '<tr>';
+  for (const fc of fixedCols) {
+    htmlHeader1 += `<th class="th-fixed" style="min-width:${fc.width}">${fc.label}</th>`;
+  }
+  for (const p of periods) {
+    const cls = p.type === 'golden' ? 'th-golden' : 'th-normal';
+    const colSpan = 2; // KH mới + KH cũ
+    htmlHeader1 += `<th colspan="${colSpan}" class="${cls}">${p.name}</th>`;
+  }
+  htmlHeader1 += '</tr>';
+
+  // Row 2: Customer type sub-headers
+  let htmlHeader2 = '<tr>';
+  for (const fc of fixedCols) {
+    htmlHeader2 += '<th></th>';
+  }
+  const custLabels = ['KH mới', 'KH cũ'];
+  for (const p of periods) {
+    const subCls = p.type === 'golden' ? 'th-golden-sub' : 'th-normal-sub';
+    for (const cl of custLabels) {
+      htmlHeader2 += `<th class="${subCls}">${cl}</th>`;
+    }
+  }
+  htmlHeader2 += '</tr>';
+
+  thead.innerHTML = htmlHeader1 + htmlHeader2;
+
+  // Rows
+  if (!items || items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${fixedCols.length + periods.length * 2}" class="empty-state">
+      <div style="padding:40px;text-align:center;">
+        <div style="font-size:36px;margin-bottom:8px;opacity:.6;">📦</div>
+        <p>Không có dữ liệu ưu đãi</p>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  let htmlRows = '';
+  for (const item of items) {
+    htmlRows += '<tr>';
+    // Fixed columns
+    for (const fc of fixedCols) {
+      let val = item[fc.key];
+      if (fc.key === 'products' && Array.isArray(val)) {
+        val = val.join('<br>');
+      }
+      if (fc.key === 'listPrice' || fc.key === 'totalListPrice' || fc.key === 'pricePerSession') {
+        val = formatPrice(val);
+      }
+      htmlRows += `<td>${val || '—'}</td>`;
+    }
+    // Promo columns
+    for (const p of periods) {
+      const prom = item.promotions?.[p.name] || {};
+      for (const custType of ['new', 'old']) {
+        const custData = prom[custType] || {};
+        const custLabel = custType === 'new' ? 'KH mới' : 'KH cũ';
+        htmlRows += '<td><div class="promo-cell">';
+        if (custData.discount !== undefined) {
+          htmlRows += `<div class="tu-discount">${formatDiscount(custData.discount)}</div>`;
+        }
+        if (custData.finalPrice !== undefined) {
+          const priceCls = p.type === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
+          htmlRows += `<div class="${priceCls}">${formatPrice(custData.finalPrice)}</div>`;
+        }
+        // AMS code (role = ds)
+        const code = custData.amsCode || custData.code || '';
+        if (code) {
+          htmlRows += `<div class="tu-code-row">
+            <span class="tu-code-badge">AMS</span>
+            <span style="font-size:11px;font-weight:600;color:#1E293B;font-family:monospace;">${code}</span>
+            <button class="copy-icon" onclick="copyText('${code}', this)" title="Copy mã AMS">📋</button>
+          </div>`;
+        } else {
+          htmlRows += `<div class="tu-code-row" style="opacity:.4;font-size:11px;color:#94A3B8;">—</div>`;
+        }
+        htmlRows += '</div></td>';
+      }
+    }
+    htmlRows += '</tr>';
+  }
+  tbody.innerHTML = htmlRows;
+
+  // Highlight golden columns if active
+  for (const p of periods) {
+    if (p.type === 'golden') {
+      // We'll add a class approach - not needed via CSS since we use golden header class
+    }
+  }
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ---------- TAB SWITCHING ----------
+function switchTab(btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const tab = btn.dataset.tab;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'tra-cuu') {
+    document.getElementById('panelTraCuu').classList.add('active');
+  } else {
+    document.getElementById('panelTinhHocPhi').classList.add('active');
+  }
+}
+
+function switchCat(btn) {
+  document.querySelectorAll('.cat-tab[data-cat]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeCategory = btn.dataset.cat;
+  document.querySelectorAll('.cat-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('cat' + capitalize(activeCategory)).classList.add('active');
+}
+
+// ---------- SEARCH ----------
+function filterTable() {
+  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  const cat = activeCategory;
+  const items = allData?.promotions?.[cat]?.items || [];
+  const tbody = document.getElementById('tbody' + capitalize(cat));
+  if (!tbody) return;
+  const rows = tbody.querySelectorAll('tr');
+  if (!query) {
+    rows.forEach(r => r.style.display = '');
+    return;
+  }
+  rows.forEach((row, idx) => {
+    if (idx === 0 && row.classList.contains('empty-state')) return;
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+
+// ---------- CALCULATOR: PRODUCT LIST ----------
+function renderCalcProducts(cat) {
+  const list = document.getElementById('calcProductList');
+  const items = allData?.catalogs?.[cat] || [];
+  if (!items || items.length === 0) {
+    list.innerHTML = '<div class="empty-state"><p>Không có sản phẩm</p></div>';
+    return;
+  }
+  selectedCalcItems = [];
+  updateCalcCount();
+
+  let html = '';
+  for (const item of items) {
+    const id = cat + '-' + (item.stt || item.name || Math.random());
+    const name = item.name || item.productName || item.packageName || 'Sản phẩm';
+    const price = item.listPrice || item.totalListPrice || 0;
+    const sub = item.packageName || item.productType || '';
+    html += `<label class="product-item" data-id="${id}" data-cat="${cat}" data-price="${price}" data-name="${name}">
+      <input type="checkbox" value="${id}" onchange="toggleCalcItem(this)" />
+      <div class="product-info">
+        <span class="product-name">${name}</span>
+        ${sub ? `<span class="product-sub">${sub}</span>` : ''}
+      </div>
+      <span class="product-price">${formatPrice(price)}</span>
+    </label>`;
+  }
+  list.innerHTML = html;
+}
+
+function switchCalcCat(btn) {
+  document.querySelectorAll('.calc-panel-select .cat-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const cat = btn.dataset.cat;
+  renderCalcProducts(cat);
+}
+
+function toggleCalcItem(cb) {
+  const id = cb.value;
+  if (cb.checked) {
+    if (!selectedCalcItems.find(i => i.id === id)) {
+      const label = cb.closest('.product-item');
+      label.classList.add('selected');
+      selectedCalcItems.push({
+        id,
+        cat: label.dataset.cat,
+        name: label.dataset.name,
+        price: parseFloat(label.dataset.price) || 0
+      });
+    }
+  } else {
+    const idx = selectedCalcItems.findIndex(i => i.id === id);
+    if (idx !== -1) {
+      const label = cb.closest('.product-item');
+      if (label) label.classList.remove('selected');
+      selectedCalcItems.splice(idx, 1);
+    }
+  }
+  updateCalcCount();
+}
+
+function updateCalcCount() {
+  document.getElementById('calcCount').textContent = `Đã chọn: ${selectedCalcItems.length} sản phẩm`;
+}
+
+// ---------- CALCULATOR: RESULT ----------
+function calculate() {
+  if (selectedCalcItems.length === 0) {
+    showToast('⚠️ Vui lòng chọn ít nhất 1 sản phẩm');
+    return;
+  }
+
+  const body = document.getElementById('calcResultBody');
+  const empty = document.getElementById('calcEmptyState');
+  const area = document.getElementById('calcResultArea');
+  empty.style.display = 'none';
+  area.style.display = '';
+
+  const cat = activeCategory; // use current lookup category or detect
+  const activePeriods = getActivePeriods(cat);
+  const allPeriods = getAllPeriods(cat);
+  // Pick best period: golden > normal > first
+  const bestPeriod = activePeriods.find(p => {
+    const per = allPeriods.find(pp => pp.name === p);
+    return per && per.type === 'golden';
+  }) || activePeriods[0] || '';
+
+  let html = '';
+  let sumOriginal = 0, sumNew = 0, sumOld = 0, sumSave = 0;
+
+  for (const item of selectedCalcItems) {
+    const price = item.price;
+    sumOriginal += price;
+
+    // Find promotion data for this product
+    const promoItems = allData?.promotions?.[cat]?.items || [];
+    let matched = null;
+    for (const pi of promoItems) {
+      const pn = pi.productName || pi.packageName || pi.name || '';
+      if (pn.toLowerCase().includes(item.name.toLowerCase()) ||
+          item.name.toLowerCase().includes(pn.toLowerCase())) {
+        if (pi.promotions && pi.promotions[bestPeriod]) {
+          matched = pi.promotions[bestPeriod];
+          break;
+        }
+      }
+    }
+
+    let discountNew = 0, discountOld = 0;
+    let amsCode = '';
+    if (matched) {
+      if (matched.new) {
+        if (matched.new.finalPrice !== undefined) discountNew = price - matched.new.finalPrice;
+        else if (matched.new.discount !== undefined) discountNew = price * (matched.new.discount / 100);
+        amsCode = matched.new.amsCode || matched.new.code || '';
+      }
+      if (matched.old) {
+        if (matched.old.finalPrice !== undefined) discountOld = price - matched.old.finalPrice;
+        else if (matched.old.discount !== undefined) discountOld = price * (matched.old.discount / 100);
+        if (!amsCode) amsCode = matched.old.amsCode || matched.old.code || '';
+      }
+    }
+
+    const newPrice = Math.max(0, price - discountNew);
+    const oldPrice = Math.max(0, price - discountOld);
+    sumNew += newPrice;
+    sumOld += oldPrice;
+    const save = (price - newPrice) > (price - oldPrice) ? (price - newPrice) : (price - oldPrice);
+    sumSave += save;
+
+    html += `<tr>
+      <td style="text-align:left;">${item.name}</td>
+      <td class="price-original">${formatPrice(price)}</td>
+      <td class="price-final">${formatPrice(newPrice)}</td>
+      <td class="price-final">${formatPrice(oldPrice)}</td>
+      <td class="price-save">${formatPrice(save)}</td>
+      <td>${amsCode ? `<span class="tu-code-badge">AMS</span> ${amsCode}` : '—'}</td>
+    </tr>`;
+  }
+
+  body.innerHTML = html;
+  document.getElementById('sumOriginal').textContent = formatPrice(sumOriginal);
+  document.getElementById('sumNew').textContent = formatPrice(sumNew);
+  document.getElementById('sumOld').textContent = formatPrice(sumOld);
+  document.getElementById('sumSave').textContent = formatPrice(sumSave);
+}
+
+function clearCalc() {
+  selectedCalcItems = [];
+  document.querySelectorAll('.product-item').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.product-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+  updateCalcCount();
+  document.getElementById('calcEmptyState').style.display = '';
+  document.getElementById('calcResultArea').style.display = 'none';
+}
+
+// ---------- LOGOUT ----------
+function handleLogout() {
+  sessionStorage.removeItem('hocmai_role');
+  localStorage.removeItem('hocmai_role');
+  window.location.href = '/';
+}
+</script>
+
+</body>
+</html>

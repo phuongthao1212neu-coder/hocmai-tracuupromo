@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/policies.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/ADC", "destination": "/ADC.html" },
+    { "source": "/daisu", "destination": "/daisu.html" }
+  ]
+}
