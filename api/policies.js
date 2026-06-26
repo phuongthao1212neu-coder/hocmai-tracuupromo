@@ -371,18 +371,19 @@ export default async function handler(req, res) {
       return res.status(502).json({ ok: false, error: `Apps Script returned HTTP ${fetchRes.status}`, fetchedAt: new Date().toISOString(), today });
     }
     const raw = await fetchRes.json();
-    const catalogs = {
-      topuni: parseCatalog(raw.topuni_catalog),
-      topclass: parseCatalog(raw.topclass_catalog),
-      giasu: parseCatalog(raw.giasu_catalog)
-    };
+
+    // Parse promotions (extract catalog + promo data from raw arrays)
     const topuniPromotions = parseTopuniPromotions(raw.topuni);
     const topclassPromotions = parseTopclassPromotions(raw.topclass);
     forwardFillTopclass(topclassPromotions.items);
     const giasuPromotions = parseGiasuPromotions(raw.giasu);
-    enrichCatalogWithPromotions(catalogs.topuni, topuniPromotions.items, matchTopuniCatalog);
-    enrichCatalogWithPromotions(catalogs.topclass, topclassPromotions.items, matchTopclassCatalog);
-    enrichCatalogWithPromotions(catalogs.giasu, giasuPromotions.items, matchGiasuCatalog);
+
+    // Use promo items as catalog directly (Apps Script doesn't have separate catalog arrays)
+    const catalogs = {
+      topuni: topuniPromotions.items,
+      topclass: topclassPromotions.items,
+      giasu: giasuPromotions.items
+    };
 
     const tuActive = topuniPromotions.periods.filter(p => isActive(today, p.dateRange));
     const tcActive = topclassPromotions.periods.filter(p => isActive(today, p.dateRange));
