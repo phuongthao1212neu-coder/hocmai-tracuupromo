@@ -361,7 +361,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const codeLabel = CREDENTIALS[role].codeLabel;
     const catalog = (APP_DATA.catalogs || {})[cat] || [];
     const promo = (APP_DATA.promotions || {})[cat] || {};
-    const periods = promo.periods || [];
+    const allPeriods = promo.periods || [];
+    // Chỉ hiển thị các kỳ đang hoạt động (activePeriods) - bộ lọc ngày thường + ngày vàng Today
+    const activeNames = promo.activePeriods || [];
+    const periods = allPeriods.filter(p => activeNames.includes(p.name));
     const wrapId = 'tableWrap' + cat.charAt(0).toUpperCase() + cat.slice(1);
     const wrap = $('#' + wrapId);
     if (!wrap) return;
@@ -477,8 +480,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let codeHtml = '';
 
     if (data.discount != null) {
-      const cls = pType === 'golden' ? 'tu-price-golden' : 'tu-discount';
-      discountHtml = `<div class="${cls}">-${data.discount}%</div>`;
+      let discountText;
+      let cls = pType === 'golden' ? 'tu-price-golden' : 'tu-discount';
+      // Nếu ≤ 1 → là %, nếu > 1 → là số tiền cố định
+      if (data.discount <= 1) {
+        discountText = '-' + Math.round(data.discount * 100) + '%';
+      } else {
+        discountText = '-' + formatPrice(data.discount);
+        cls += ' discount-fixed';
+      }
+      discountHtml = `<div class="${cls}">${discountText}</div>`;
     }
     if (data.finalPrice != null) {
       const cls = pType === 'golden' ? 'tu-price-golden' : 'tu-price-normal';

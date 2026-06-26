@@ -136,10 +136,10 @@ function determineCustomerType(text) {
 
 function fieldNameToKey(label) {
   const s = String(label || '').trim().toLowerCase();
-  if (s.includes('học phí') || s.includes('hp sau')) return 'price';
+  if (s.includes('học phí') || s.includes('hp sau') || s.includes('học phí thực đóng')) return 'price';
   if (s.includes('ams')) return 'ams';
   if (s.includes('mã')) return 'code';
-  if (s.includes('ưu đãi')) return 'discount';
+  if (s.includes('ưu đãi') || s.includes('voucher')) return 'discount';
   return null;
 }
 
@@ -275,8 +275,7 @@ function parseTopclassPromotions(rows) {
 function parseGiasuPromotions(rows) {
   return parseSheetPromotions(rows, [
     { col: 0, key: 'name' }, { col: 1, key: 'sessions', asNumber: true },
-    { col: 2, key: 'pricePerSession', asNumber: true },
-    { col: 3, key: 'totalListPrice', asNumber: true }
+    { col: 2, key: 'pricePerSession', asNumber: true }, { col: 3, key: 'totalListPrice', asNumber: true }
   ]);
 }
 
@@ -309,6 +308,7 @@ function parseSessionsFromName(name) {
   return m ? parseInt(m[1], 10) : null;
 }
 
+// Matching functions - match catalog item with promotion item
 function matchTopuniCatalog(cat, pro) {
   return Number(cat.listPrice) > 0 && Number(cat.listPrice) === Number(pro.listPrice);
 }
@@ -372,19 +372,25 @@ export default async function handler(req, res) {
     }
     const raw = await fetchRes.json();
 
-    // Parse promotions (extract catalog + promo data from raw arrays)
+    // Parse catalogs from DanhmucSP sheets
+    const catalogs = {
+      topuni: parseCatalog(raw.topuni_catalog),
+      topclass: parseCatalog(raw.topclass_catalog),
+      giasu: parseCatalog(raw.giasu_catalog)
+    };
+
+    // Parse promotions from promo sheets
     const topuniPromotions = parseTopuniPromotions(raw.topuni);
     const topclassPromotions = parseTopclassPromotions(raw.topclass);
     forwardFillTopclass(topclassPromotions.items);
     const giasuPromotions = parseGiasuPromotions(raw.giasu);
 
-    // Use promo items as catalog directly (Apps Script doesn't have separate catalog arrays)
-    const catalogs = {
-      topuni: topuniPromotions.items,
-      topclass: topclassPromotions.items,
-      giasu: giasuPromotions.items
-    };
+    // Enrich catalogs with promotion data
+    enrichCatalogWithPromotions(catalogs.topuni, topuniPromotions.items, matchTopuniCatalog);
+    enrichCatalogWithPromotions(catalogs.topclass, topclassPromotions.items, matchTopclassCatalog);
+    enrichCatalogWithPromotions(catalogs.giasu, giasuPromotions.items, matchGiasuCatalog);
 
+    // Get active periods for each category
     const tuActive = topuniPromotions.periods.filter(p => isActive(today, p.dateRange));
     const tcActive = topclassPromotions.periods.filter(p => isActive(today, p.dateRange));
     const gsActive = giasuPromotions.periods.filter(p => isActive(today, p.dateRange));
