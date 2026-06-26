@@ -424,11 +424,10 @@ function renderTable(cat) {
   const tbody = document.getElementById('tbody' + capitalize(cat));
   if (!thead || !tbody) return;
 
-  const periods = getAllPeriods(cat);
   const activePeriods = getActivePeriods(cat);
   const items = allData?.promotions?.[cat]?.items || [];
-
-  // Build header
+  // Chỉ hiển thị các kỳ ưu đãi đang hoạt động (lọc ngày vàng Today)
+  const periods = getAllPeriods(cat).filter(p => activePeriods.includes(p.name));
   const fixedCols = getFixedColumns(cat);
 
   // Row 1: Period headers (merged)
