@@ -344,7 +344,11 @@ function formatPrice(v) {
 
 function formatDiscount(v) {
   if (v === null || v === undefined) return '';
-  if (typeof v === 'number') return '-' + Math.round(v * 100) / 100 + '%';
+  if (typeof v === 'number') {
+    // ≤1 là %, >1 là số tiền cố định
+    if (v <= 1) return '-' + Math.round(v * 100) + '%';
+    return '-' + formatPrice(v);
+  }
   return String(v);
 }
 
@@ -674,12 +678,21 @@ function calculate() {
     if (matched) {
       if (matched.new) {
         if (matched.new.finalPrice !== undefined) discountNew = price - matched.new.finalPrice;
-        else if (matched.new.discount !== undefined) discountNew = price * (matched.new.discount / 100);
+        else if (matched.new.discount !== undefined) {
+          // ≤1 là %, >1 là số tiền cố định
+          discountNew = matched.new.discount <= 1
+            ? price * matched.new.discount
+            : matched.new.discount;
+        }
         amsCode = matched.new.amsCode || matched.new.code || '';
       }
       if (matched.old) {
         if (matched.old.finalPrice !== undefined) discountOld = price - matched.old.finalPrice;
-        else if (matched.old.discount !== undefined) discountOld = price * (matched.old.discount / 100);
+        else if (matched.old.discount !== undefined) {
+          discountOld = matched.old.discount <= 1
+            ? price * matched.old.discount
+            : matched.old.discount;
+        }
         if (!amsCode) amsCode = matched.old.amsCode || matched.old.code || '';
       }
     }

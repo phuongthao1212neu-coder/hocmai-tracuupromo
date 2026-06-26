@@ -654,16 +654,25 @@ document.addEventListener('DOMContentLoaded', function() {
       if (bestPromo.new) {
         const d = bestPromo.new;
         if (d.finalPrice != null && d.finalPrice < listPrice) hpNew = d.finalPrice;
-        else if (d.discount != null) hpNew = Math.round(listPrice * (1 - d.discount / 100));
-        saveNew = listPrice - hpNew;
+        else if (d.discount != null) {
+          // discount ≤ 1 là %, > 1 là số tiền cố định
+          hpNew = d.discount <= 1
+            ? Math.round(listPrice * (1 - d.discount))
+            : Math.max(0, listPrice - d.discount);
+        }
+        saveNew = Math.max(0, listPrice - hpNew);
         codeNew = d[codeField] || '—';
       }
       // KH cũ
       if (bestPromo.old) {
         const d = bestPromo.old;
         if (d.finalPrice != null && d.finalPrice < listPrice) hpOld = d.finalPrice;
-        else if (d.discount != null) hpOld = Math.round(listPrice * (1 - d.discount / 100));
-        saveOld = listPrice - hpOld;
+        else if (d.discount != null) {
+          hpOld = d.discount <= 1
+            ? Math.round(listPrice * (1 - d.discount))
+            : Math.max(0, listPrice - d.discount);
+        }
+        saveOld = Math.max(0, listPrice - hpOld);
         codeOld = d[codeField] || '—';
       }
 
