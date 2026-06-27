@@ -677,15 +677,13 @@
       const price = item.listPrice || item.totalListPrice || 0;
       const li = document.createElement('li');
       li.className = 'product-item';
-      const isVACTcombo = cat === 'topuni' && (item.name || '').toLowerCase().includes('v-act') || item.isVACT || item.packageName?.toLowerCase().includes('combo');
       li.innerHTML = `
         <input type="checkbox" data-idx="${i}" id="calc_${cat}_${i}" ${custType ? '' : 'disabled'}>
         <div class="product-info">
           <label class="product-name" for="calc_${cat}_${i}">${name}</label>
           <span class="product-sub">${sub}</span>
         </div>
-        <div class="product-price">${formatPrice(price)}</div>
-        ${isVACTcombo ? '<div class="vact-badge">V-ACT COMBO</div>' : ''}`;
+        <div class="product-price">${formatPrice(price)}</div>`;
       li.addEventListener('click', (e) => {
         if (e.target.tagName === 'INPUT') return;
         const cb = li.querySelector('input[type="checkbox"]');
