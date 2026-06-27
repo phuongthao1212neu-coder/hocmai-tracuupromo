@@ -1166,7 +1166,7 @@
         html += '—';
       }
       html += '</td>';
-      html += '<td><button class="btn-remove-row" title="Bỏ chọn" onclick="window.removeCalcRow(\'' + cat + '\',' + i + ')">✕</button></td>';
+      html += '<td><button class="btn-remove-row" title="Bỏ chọn">✕</button></td>';
       html += '</tr>';
     }
 
@@ -1349,6 +1349,47 @@
         calculateFee(cat);
       });
       if (clear) clear.addEventListener('click', () => clearCalc(cat));
+    });
+
+    // Event delegation: nút xoá từng dòng trong bảng kết quả
+    $$('.result-area').forEach(function(area) {
+      area.addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-remove-row');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        var row = btn.closest('tr');
+        if (!row) return;
+
+        var idxsAttr = row.getAttribute('data-idxs') || '';
+        var idxs = idxsAttr.split(',').filter(function(s) { return s !== ''; });
+
+        // Xác định panelId từ id của area
+        var areaId = area.id; // VD: calcResultTopclass
+        var cat = areaId.replace('calcResult', '').toLowerCase(); // topclass
+        var panelId = 'calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1);
+
+        // Uncheck từng checkbox
+        for (var j = 0; j < idxs.length; j++) {
+          var cb = $('#' + panelId + ' input[data-idx="' + idxs[j] + '"]');
+          if (cb) {
+            cb.checked = false;
+            var li = cb.closest('.product-item');
+            if (li) li.classList.remove('selected');
+            cb.dispatchEvent(new Event('change'));
+          }
+        }
+
+        // Xoá dòng khỏi DOM
+        row.remove();
+
+        // Nếu hết dòng -> empty state
+        var remainingRows = area.querySelectorAll('.result-table tbody tr');
+        if (remainingRows.length === 0) {
+          area.innerHTML = '<div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>';
+        }
+      });
     });
   }
 
