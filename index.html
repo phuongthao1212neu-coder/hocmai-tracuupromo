@@ -308,6 +308,7 @@
 
   function enterApp(selectedRole) {
     ROLE = selectedRole;
+    sessionStorage.setItem('hocmai_role', selectedRole);
     $('#loginPage').style.display = 'none';
     $('#appPage').style.display = '';
     $('#roleBadgeText').textContent = selectedRole === 'tvv' ? 'Tư vấn viên' : 'Đại sứ';
@@ -323,6 +324,8 @@
   function doLogout() {
     ROLE = null;
     APP_DATA = null;
+    sessionStorage.removeItem('hocmai_role');
+    document.body.classList.remove('role-ds');
     $('#appPage').style.display = 'none';
     $('#loginPage').style.display = '';
     $('#username').value = '';
@@ -1419,6 +1422,11 @@
   // ─── INIT ──────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    // F5 không mất session: tự động vào lại nếu đã login trước đó
+    var savedRole = sessionStorage.getItem('hocmai_role');
+    if (savedRole === 'tvv' || savedRole === 'ds') {
+      enterApp(savedRole);
+    }
   });
 })();
 </script>
