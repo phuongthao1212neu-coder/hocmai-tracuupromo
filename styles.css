@@ -243,13 +243,14 @@ body {
   padding:6px 8px; background:#F8FAFC;
   border-radius:8px; border:1px solid #E8EEF6;
   transition:.15s; overflow:hidden;
+  align-items:center; text-align:center;
 }
 .tu-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.tu-discount { font-size:11px; font-weight:700; color:#0F172A; }
-.tu-price-normal { font-size:11px; font-weight:700; color:var(--hm-green); }
-.tu-price-golden { font-size:11px; font-weight:700; color:var(--hm-orange-dark); }
+.tu-discount { font-size:11px; font-weight:700; color:#0F172A; text-align:center; }
+.tu-price-normal { font-size:11px; font-weight:700; color:var(--hm-green); text-align:center; }
+.tu-price-golden { font-size:11px; font-weight:700; color:var(--hm-orange-dark); text-align:center; }
 .tu-code-row {
-  display:flex; align-items:center; gap:4px; margin-top:2px;
+  display:flex; align-items:center; justify-content:center; gap:4px; margin-top:2px;
   min-width:0;
 }
 .tu-code-badge {
