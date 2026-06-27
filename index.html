@@ -1181,9 +1181,38 @@
 
     container.innerHTML = html;
 
-    // Thêm global function reference for on click handlers
-    if (!window.removeCalcRow) {
-      window.removeCalcRow = removeCalcRow;
+    // Gắn trực tiếp event listener cho từng nút xoá (không onclick, không delegation)
+    var deleteBtns = container.querySelectorAll('.btn-remove-row');
+    for (var d = 0; d < deleteBtns.length; d++) {
+      deleteBtns[d].addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var row = this.closest('tr');
+        if (!row) return;
+
+        var idxsAttr = row.getAttribute('data-idxs') || '';
+        var idxs = idxsAttr.split(',').filter(function(s) { return s !== ''; });
+
+        var panelId = 'calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1);
+
+        for (var j = 0; j < idxs.length; j++) {
+          var cb = document.querySelector('#' + panelId + ' input[data-idx="' + idxs[j] + '"]');
+          if (cb) {
+            cb.checked = false;
+            var li = cb.closest('.product-item');
+            if (li) li.classList.remove('selected');
+            cb.dispatchEvent(new Event('change'));
+          }
+        }
+
+        row.remove();
+
+        var remainingRows = container.querySelectorAll('.result-table tbody tr');
+        if (remainingRows.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>';
+        }
+      });
     }
   }
 
