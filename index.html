@@ -784,13 +784,12 @@
   }
 
 // ─── TOPUNI COMBO HANDLING ──────────────────────────────────────────
-  // Logic:
-  // 1. Phân loại sản phẩm theo tên (Nền tảng, Toàn diện VIP, Tiêu chuẩn VIP, TN...)
-  // 2. Combo Nền tảng: chọn N khóa → tìm combo M môn lớn nhất (M ≤ N)
-  //    → áp discount combo cho TẤT CẢ N khóa (mỗi khóa giữ listPrice riêng)
-  // 3. Combo VIP 2 kỳ thi: Toàn diện VIP + Tiêu chuẩn VIP → áp discount combo
-  //    cho từng khóa riêng lẻ
-  // 4. Còn lại: tính riêng lẻ theo discount của từng khóa
+  // Logic DATA-DRIVEN:
+  // 1. Phân loại sản phẩm: Nền tảng, Toàn diện VIP, Tiêu chuẩn VIP, Luyện đề TN, Toàn diện TN, Tiêu chuẩn TN
+  // 2. Combo Nền tảng: N khóa → combo M môn (M≤N) → áp discount cho TẤT CẢ N khóa
+  // 3. Combo VIP 2 kỳ thi: Toàn diện VIP + Tiêu chuẩn VIP
+  // 4. Combo VIP+Luyện đề: Toàn diện VIP + Luyện đề TN THPT
+  // 5. Còn lại: tính riêng lẻ
 
   function matchTopuniPackages(selected, promoItems, activePeriods, custType, codeField) {
     var results = [];
@@ -799,6 +798,7 @@
     var nenTangItems = [];
     var toanDienVipItems = [];
     var tieuChuanVipItems = [];
+    var luyenDeTnItems = [];
     var toanDienTnItems = [];
     var tieuChuanTnItems = [];
 
@@ -811,23 +811,19 @@
         toanDienVipItems.push(item);
       } else if (name.indexOf('tiêu chuẩn vip') >= 0 && name.indexOf('tn thpt') >= 0) {
         tieuChuanVipItems.push(item);
+      } else if (name.indexOf('luyện đề') >= 0 && name.indexOf('tn thpt') >= 0) {
+        luyenDeTnItems.push(item);
       } else if (name.indexOf('toàn diện') >= 0 && name.indexOf('tn thpt') >= 0) {
         toanDienTnItems.push(item);
       } else if (name.indexOf('tiêu chuẩn') >= 0 && name.indexOf('tn thpt') >= 0) {
         tieuChuanTnItems.push(item);
       } else {
         var best = getBestPromoForItem(item, activePeriods, custType, codeField);
-        results.push({
-          items: [item],
-          listPrice: item.listPrice || 0,
-          promo: best,
-          isCombo: false
-        });
+        results.push({ items: [item], listPrice: item.listPrice || 0, promo: best, isCombo: false });
       }
     }
 
     // === COMBO NỀN TẢNG ===
-    // Nếu chọn N khóa → tìm combo M môn lớn nhất (M ≤ N) → áp discount cho TẤT CẢ N khóa
     if (nenTangItems.length >= 2) {
       var combo2 = null, combo3 = null;
       for (var j = 0; j < promoItems.length; j++) {
@@ -835,51 +831,54 @@
         if ((p.packageName || '').indexOf('Nền tảng 2') >= 0) combo2 = p;
         if ((p.packageName || '').indexOf('Nền tảng 3') >= 0) combo3 = p;
       }
-
       var targetCombo = null;
       if (nenTangItems.length >= 3 && combo3) targetCombo = combo3;
       else if (combo2) targetCombo = combo2;
 
       if (targetCombo) {
-        // Áp discount combo cho TẤT CẢ N sản phẩm nền tảng
         var comboBest = getBestPromoForItem(targetCombo, activePeriods, custType, codeField);
         for (var m = 0; m < nenTangItems.length; m++) {
           var ntItem = nenTangItems[m];
           var ntPrice = ntItem.listPrice || 0;
           var ntFinal = comboBest ? applyDiscount(ntPrice, comboBest) : ntPrice;
-          results.push({
-            items: [ntItem],
-            listPrice: ntPrice,
-            promo: comboBest,
-            finalPrice: ntFinal,
-            savings: comboBest ? (ntPrice - ntFinal) : 0,
-            isCombo: false
-          });
+          results.push({ items: [ntItem], listPrice: ntPrice, promo: comboBest, finalPrice: ntFinal, savings: comboBest ? (ntPrice - ntFinal) : 0, isCombo: false });
         }
       } else {
-        // Không tìm thấy combo: tính riêng lẻ
         for (var m = 0; m < nenTangItems.length; m++) {
           var bestI = getBestPromoForItem(nenTangItems[m], activePeriods, custType, codeField);
-          results.push({
-            items: [nenTangItems[m]],
-            listPrice: nenTangItems[m].listPrice || 0,
-            promo: bestI,
-            isCombo: false
-          });
+          results.push({ items: [nenTangItems[m]], listPrice: nenTangItems[m].listPrice || 0, promo: bestI, isCombo: false });
         }
       }
     } else if (nenTangItems.length === 1) {
       var best1 = getBestPromoForItem(nenTangItems[0], activePeriods, custType, codeField);
-      results.push({
-        items: [nenTangItems[0]],
-        listPrice: nenTangItems[0].listPrice || 0,
-        promo: best1,
-        isCombo: false
-      });
+      results.push({ items: [nenTangItems[0]], listPrice: nenTangItems[0].listPrice || 0, promo: best1, isCombo: false });
     }
 
-    // === COMBO VIP 2 KỲ THI ===
-    // Toàn diện VIP + Tiêu chuẩn VIP → áp discount combo cho từng khóa riêng lẻ
+    // === COMBO VIP+Luyện đề: Toàn diện VIP 1 kỳ thi + Luyện đề TN THPT ===
+    // (Kiểm tra trước VIP 2 kỳ thi vì Toàn diện VIP có thể tham gia cả 2 combo)
+    if (toanDienVipItems.length > 0 && luyenDeTnItems.length > 0) {
+      var vipLuyenDeCombo = null;
+      for (var w = 0; w < promoItems.length; w++) {
+        var pw = promoItems[w];
+        var pn = pw.packageName || '';
+        if (pn.indexOf('VIP 1 kỳ thi') >= 0 && pn.indexOf('Luyện đề') >= 0) vipLuyenDeCombo = pw;
+      }
+      if (vipLuyenDeCombo) {
+        var vldBest = getBestPromoForItem(vipLuyenDeCombo, activePeriods, custType, codeField);
+        var vldItems = [toanDienVipItems[0], luyenDeTnItems[0]];
+        for (var x = 0; x < vldItems.length; x++) {
+          var vldItem = vldItems[x];
+          var vldPrice = vldItem.listPrice || 0;
+          var vldFinal = vldBest ? applyDiscount(vldPrice, vldBest) : vldPrice;
+          results.push({ items: [vldItem], listPrice: vldPrice, promo: vldBest, finalPrice: vldFinal, savings: vldBest ? (vldPrice - vldFinal) : 0, isCombo: false });
+        }
+        // Đánh dấu đã xử lý Toàn diện VIP và Luyện đề
+        toanDienVipItems.shift(); // bỏ phần tử đầu đã dùng
+        luyenDeTnItems.shift();
+      }
+    }
+
+    // === COMBO VIP 2 KỲ THI: Toàn diện VIP + Tiêu chuẩn VIP ===
     if (toanDienVipItems.length > 0 && tieuChuanVipItems.length > 0) {
       var vipCombo = null;
       for (var n = 0; n < promoItems.length; n++) {
@@ -888,68 +887,38 @@
       }
       if (vipCombo) {
         var vb = getBestPromoForItem(vipCombo, activePeriods, custType, codeField);
-        // Áp discount combo cho từng sản phẩm riêng lẻ (giữ listPrice của từng khóa)
         var vipPair = [toanDienVipItems[0], tieuChuanVipItems[0]];
         for (var v = 0; v < vipPair.length; v++) {
           var vi = vipPair[v];
           var vp = vi.listPrice || 0;
           var vf = vb ? applyDiscount(vp, vb) : vp;
-          results.push({
-            items: [vi],
-            listPrice: vp,
-            promo: vb,
-            finalPrice: vf,
-            savings: vb ? (vp - vf) : 0,
-            isCombo: false
-          });
+          results.push({ items: [vi], listPrice: vp, promo: vb, finalPrice: vf, savings: vb ? (vp - vf) : 0, isCombo: false });
         }
-      } else {
-        // Không tìm thấy combo VIP: tính riêng lẻ
-        results.push({
-          items: [toanDienVipItems[0]],
-          listPrice: toanDienVipItems[0].listPrice || 0,
-          promo: getBestPromoForItem(toanDienVipItems[0], activePeriods, custType, codeField),
-          isCombo: false
-        });
-        results.push({
-          items: [tieuChuanVipItems[0]],
-          listPrice: tieuChuanVipItems[0].listPrice || 0,
-          promo: getBestPromoForItem(tieuChuanVipItems[0], activePeriods, custType, codeField),
-          isCombo: false
-        });
-      }
-    } else {
-      // Chỉ có 1 trong 2 loại VIP: tính riêng lẻ
-      for (var o = 0; o < toanDienVipItems.length; o++) {
-        var bi = getBestPromoForItem(toanDienVipItems[o], activePeriods, custType, codeField);
-        results.push({
-          items: [toanDienVipItems[o]],
-          listPrice: toanDienVipItems[o].listPrice || 0,
-          promo: bi,
-          isCombo: false
-        });
-      }
-      for (var p2 = 0; p2 < tieuChuanVipItems.length; p2++) {
-        var bi2 = getBestPromoForItem(tieuChuanVipItems[p2], activePeriods, custType, codeField);
-        results.push({
-          items: [tieuChuanVipItems[p2]],
-          listPrice: tieuChuanVipItems[p2].listPrice || 0,
-          promo: bi2,
-          isCombo: false
-        });
+        toanDienVipItems.shift();
+        tieuChuanVipItems.shift();
       }
     }
 
-    // Các sản phẩm TN còn lại: tính riêng lẻ
+    // Toàn diện VIP còn dư: tính riêng lẻ
+    for (var o = 0; o < toanDienVipItems.length; o++) {
+      var bi = getBestPromoForItem(toanDienVipItems[o], activePeriods, custType, codeField);
+      results.push({ items: [toanDienVipItems[o]], listPrice: toanDienVipItems[o].listPrice || 0, promo: bi, isCombo: false });
+    }
+    // Tiêu chuẩn VIP còn dư
+    for (var p2 = 0; p2 < tieuChuanVipItems.length; p2++) {
+      var bi2 = getBestPromoForItem(tieuChuanVipItems[p2], activePeriods, custType, codeField);
+      results.push({ items: [tieuChuanVipItems[p2]], listPrice: tieuChuanVipItems[p2].listPrice || 0, promo: bi2, isCombo: false });
+    }
+    // Luyện đề TN còn dư
+    for (var ld = 0; ld < luyenDeTnItems.length; ld++) {
+      var biLd = getBestPromoForItem(luyenDeTnItems[ld], activePeriods, custType, codeField);
+      results.push({ items: [luyenDeTnItems[ld]], listPrice: luyenDeTnItems[ld].listPrice || 0, promo: biLd, isCombo: false });
+    }
+    // Toàn diện TN + Tiêu chuẩn TN
     var tnItems = toanDienTnItems.concat(tieuChuanTnItems);
     for (var q = 0; q < tnItems.length; q++) {
       var bi3 = getBestPromoForItem(tnItems[q], activePeriods, custType, codeField);
-      results.push({
-        items: [tnItems[q]],
-        listPrice: tnItems[q].listPrice || 0,
-        promo: bi3,
-        isCombo: false
-      });
+      results.push({ items: [tnItems[q]], listPrice: tnItems[q].listPrice || 0, promo: bi3, isCombo: false });
     }
 
     return results;
