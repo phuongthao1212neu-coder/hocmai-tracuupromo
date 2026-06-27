@@ -348,29 +348,59 @@
     const wrap = $('#bannerGroup');
     wrap.innerHTML = '';
     if (!APP_DATA) return;
-    // Deduplicate by period name — show banner only once per active period
-    const seenNames = new Set();
+
     const cats = ['topuni', 'topclass', 'giasu'];
+    let bannerShown = false;
+
+    // Priority 1: golden period → show golden banner
     for (const cat of cats) {
+      if (bannerShown) break;
       const promo = APP_DATA.promotions[cat];
       if (!promo || !promo.activePeriods || promo.activePeriods.length === 0) continue;
       for (const pname of promo.activePeriods) {
-        if (seenNames.has(pname)) continue;
-        seenNames.add(pname);
+        if (bannerShown) break;
         const period = (promo.periods || []).find(p => p.name === pname);
         if (!period) continue;
         const isGolden = (period.type || '').includes('golden') || pname.toLowerCase().includes('ngày vàng');
         if (!isGolden) continue;
+
         const div = document.createElement('div');
         div.className = 'day-banner show golden';
-        // FIX: Nội dung banner ngắn gọn, không có ngày
         div.innerHTML = `
-          <div class="b-icon">🌟</div>
+          <div class="b-icon">🎆</div>
           <div class="b-text">
             <strong>Ưu đãi ngày vàng đang diễn ra!</strong>
-            <span>Chúc bạn chốt đơn thành công!</span>
+            <span>${period.dateRange ? period.dateRange + ' — ' : ''}Chúc bạn chốt đơn thành công!</span>
           </div>`;
         wrap.appendChild(div);
+        bannerShown = true;
+      }
+    }
+
+    // Priority 2: no golden → show normal banner
+    if (!bannerShown) {
+      for (const cat of cats) {
+        if (bannerShown) break;
+        const promo = APP_DATA.promotions[cat];
+        if (!promo || !promo.activePeriods || promo.activePeriods.length === 0) continue;
+        for (const pname of promo.activePeriods) {
+          if (bannerShown) break;
+          const period = (promo.periods || []).find(p => p.name === pname);
+          if (!period) continue;
+          const isGolden = (period.type || '').includes('golden') || pname.toLowerCase().includes('ngày vàng');
+          if (isGolden) continue;
+
+          const div = document.createElement('div');
+          div.className = 'day-banner show normal';
+          div.innerHTML = `
+            <div class="b-icon">🎉</div>
+            <div class="b-text">
+              <strong>Chương trình ưu đãi đang diễn ra!</strong>
+              <span>Áp dụng ${period.dateRange ? period.dateRange + ' — ' : ''}Chúc bạn chốt đơn thành công!</span>
+            </div>`;
+          wrap.appendChild(div);
+          bannerShown = true;
+        }
       }
     }
   }
@@ -461,8 +491,8 @@
   }
 
   function cleanPeriodName(name) {
-    // Remove date patterns like "| 01/08 - 31/08", "(01/08/2026 - 31/08/2026)", etc.
-    return name.replace(/[|(]\s*\d{1,2}\/\d{1,2}.*?(?:đến|-).*?(?:\d{1,2}\/\d{1,4})?\s*[)]?\s*/g, '').trim();
+    // Remove date patterns like "\n(Từ 01/06/2026 - 31/07/2026)", "\n(03/06-05/06/2026)", etc.
+    return name.replace(/\s*\n\s*\(.*?\)\s*/g, '').replace(/\s*\(.*?\)\s*/g, '').trim();
   }
 
   function buildPromoTable(cat) {
@@ -651,7 +681,7 @@
     const checkboxes = $$(`#calcPanel${cat.charAt(0).toUpperCase() + cat.slice(1)} input[type="checkbox"]:checked`);
     if (!APP_DATA) return [];
     const catalog = (APP_DATA.catalogs || {})[cat] || [];
-    return checkboxes.map(cb => {
+    return Array.from(checkboxes).map(cb => {
       const idx = parseInt(cb.dataset.idx, 10);
       return catalog[idx];
     }).filter(Boolean);

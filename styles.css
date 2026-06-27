@@ -100,6 +100,16 @@ body {
   content:'✨'; position:absolute; bottom:8px; right:16px;
   font-size:32px; opacity:.25; pointer-events:none;
 }
+.day-banner.normal {
+  background:linear-gradient(135deg,#EFF6FF 0%,#DBEAFE 100%);
+  border-color:#93C5FD; color:#1E40AF;
+  box-shadow:0 4px 16px rgba(59,130,246,.15);
+  position:relative; overflow:hidden;
+}
+.day-banner.normal::after {
+  content:'🎉'; position:absolute; bottom:8px; right:16px;
+  font-size:32px; opacity:.2; pointer-events:none;
+}
 .day-banner .b-icon {
   width:44px; height:44px; border-radius:12px;
   display:inline-flex; align-items:center; justify-content:center;
