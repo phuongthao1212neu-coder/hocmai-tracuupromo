@@ -530,9 +530,9 @@
         const ctypeLabel = getCustLabel(ctype);
         periodColumns.push({ period: p, cust: c, pType, ctype, ctypeLabel });
       }
-      // DS role: Gia sư thêm cột Cart (all KH)
+      // DS role: Gia sư thêm cột Mọi KH (all)
       if (ROLE === 'ds' && cat === 'giasu') {
-        periodColumns.push({ period: p, cust: { type: 'all' }, pType, ctype: 'all', ctypeLabel: 'Cart' });
+        periodColumns.push({ period: p, cust: { type: 'all' }, pType, ctype: 'all', ctypeLabel: 'Mọi KH' });
       }
     }
 
