@@ -729,44 +729,93 @@ body {
 
 /* ═══════ TABLET (768-1024) ═══════ */
 @media(min-width:768px) and (max-width:1024px){
-  .header { padding:12px 20px; }
-  .header-center h1 { font-size:20px; }
-  .header-badge { font-size:10px; padding:5px 12px; }
-  .app-layout { padding:20px 16px; }
-  .promo-table { min-width:900px; }
+  .header { padding:10px 16px; }
+  .header-center h1 { font-size:18px; }
+  .header-center p { font-size:11px; }
+  .header-badge { font-size:10px; padding:4px 10px; }
+  .header-logo .logo-image { width:36px; height:36px; }
+  .app-layout { padding:16px 12px; }
+  .tab-btn { padding:8px 16px; font-size:13px; }
+  .cat-tab { padding:6px 14px; font-size:11px; }
+  .promo-table { font-size:11px; }
+  .promo-table thead th { padding:8px 6px; font-size:10px; }
+  .promo-table tbody td { padding:6px 8px; font-size:11px; }
+  .th-fixed { min-width:60px !important; }
+  .promo-cell { min-width:120px; max-width:180px; }
+  .tu-card { padding:4px 6px; gap:1px; }
+  .calc-layout { gap:12px; }
+  .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 }
 
 /* ═══════ MOBILE (<=768px) ═══════ */
 @media(max-width:768px){
   .header {
-    padding:10px 16px; min-height:auto;
-    flex-wrap:wrap; justify-content:center;
+    padding:8px 12px; min-height:auto;
+    flex-wrap:wrap; justify-content:center; gap:6px;
   }
   .header-left { order:1; }
-  .header-center { order:2; flex:1 1 auto; padding:0 8px; }
-  .header-center h1 { font-size:17px; }
-  .header-center p { font-size:11px; }
+  .header-logo .logo-image { width:32px; height:32px; }
+  .header-center { order:2; flex:1 1 auto; padding:0 4px; }
+  .header-center h1 { font-size:15px; }
+  .header-center p { font-size:10px; }
   .header-right { order:3; }
-  .header-badge { font-size:10px; padding:4px 10px; }
-  .btn-logout { font-size:11px; padding:5px 10px; }
+  .header-badge { font-size:9px; padding:3px 8px; }
+  .btn-logout { font-size:10px; padding:4px 8px; }
 
-  .app-layout { padding:14px 12px; }
+  .app-layout { padding:10px 8px; }
   .app-topbar { gap:4px; overflow-x:auto; }
-  .tab-btn { padding:8px 14px; font-size:13px; white-space:nowrap; }
-  .cat-tabs { gap:6px; }
-  .cat-tab { padding:7px 16px; font-size:12px; }
+  .tab-btn { padding:6px 10px; font-size:12px; white-space:nowrap; }
+  .tab-btn .tab-icon { font-size:13px; }
+  .cat-tabs { gap:4px; }
+  .cat-tab { padding:5px 12px; font-size:11px; }
 
-  .calc-layout { grid-template-columns:1fr !important; }
+  /* Banner compact */
+  .tab-banner { margin-bottom:6px; }
+  .tab-banner-inner { padding:5px 10px; font-size:11px; border-radius:8px; }
+
+  /* Search */
+  .search-bar { margin-bottom:8px; }
+  .search-bar input { font-size:12px; padding:8px 12px; }
+
+  /* Promo table: scroll ngang + sticky columns */
+  .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .promo-table { font-size:11px; min-width:600px; }
+  .promo-table thead th { padding:6px 4px; font-size:10px; }
+  .promo-table tbody td { padding:5px 6px; font-size:11px; }
+  .th-fixed { min-width:50px !important; }
+  .promo-table tbody td:first-child { min-width:100px !important; }
+  .promo-table tbody td:nth-child(2) { min-width:90px !important; }
+  .promo-cell { min-width:100px; max-width:150px; }
+  .tu-card { padding:4px 5px; gap:1px; border-radius:6px; }
+  .tu-discount { font-size:10px; }
+  .tu-price-normal, .tu-price-golden { font-size:10px; }
+  .tu-code-badge { font-size:9px; padding:1px 4px; max-width:80px; }
+  .copy-icon { width:16px; height:16px; font-size:9px; }
+
+  /* Calculator: 1 cột */
+  .calc-layout { grid-template-columns:1fr !important; gap:10px; }
   .btn-calc { width:100%; }
-  .summary-row { flex-direction:column; gap:8px; }
-  .summary-item { min-width:auto; text-align:left; display:flex; justify-content:space-between; }
-  .summary-item .s-value { font-size:15px; }
+  .btn-clear { width:100%; margin-top:4px; }
+  .summary-row { flex-direction:column; gap:6px; }
+  .summary-item { min-width:auto; text-align:left; display:flex; justify-content:space-between; padding:8px 12px; }
+  .summary-item .s-value { font-size:14px; }
+  .result-table { font-size:11px; }
+  .result-table th, .result-table td { padding:6px 8px; }
 
-  .promo-table { min-width:100%; font-size:12px; }
-  .loading-card { padding:28px 20px; }
-  .spinner { width:36px; height:36px; }
-  .login-card { padding:32px 24px; }
-  .login-title { font-size:20px; }
+  /* Login */
+  .login-card { padding:24px 16px; }
+  .login-title { font-size:18px; }
+  .login-subtitle { font-size:12px; }
+  .role-option { padding:12px 8px; }
+  .role-icon { font-size:24px; }
+  .role-name { font-size:12px; }
+  .role-desc { font-size:10px; }
+  .btn-login { padding:12px; font-size:14px; }
+  .form-control { padding:10px 12px; font-size:13px; }
+
+  /* Loading */
+  .loading-card { padding:24px 16px; }
+  .spinner { width:32px; height:32px; }
 }
 
 /* ─── ĐẠI SỨ: ẩn chọn loại KH ─── */
