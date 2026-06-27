@@ -349,7 +349,7 @@ function enrichCatalogWithPromotions(catalogItems, promotionItems, matchFn) {
 // =========================================================================
 // Handler
 // =========================================================================
-const RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache memory
+const RESPONSE_CACHE_TTL_MS = 2 * 60 * 1000; // 2 phút cache memory
 let responseCache = { data: null, expiresAt: 0 };
 
 export default async function handler(req, res) {
@@ -357,7 +357,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   // CDN cache: 5 phút (s-maxage=300), stale-while-revalidate 24h cho failover
-  res.setHeader('Cache-Control', 'public, s-maxage=300, max-age=60, stale-while-revalidate=86400, stale-if-error=86400');
+  res.setHeader('Cache-Control', 'public, s-maxage=120, max-age=60, stale-while-revalidate=86400, stale-if-error=86400');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   // Có cache trong memory → trả luôn
