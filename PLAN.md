@@ -578,4 +578,61 @@ function showRoleInfo() {
 
 ---
 
+## 15. 📊 TIẾN ĐỘ THỰC TẾ (Cập nhật: 27/06/2026)
+
+### ĐÃ HOÀN THÀNH ✅
+
+| Hạng mục | Trạng thái | Ghi chú |
+|----------|-----------|---------|
+| Trang login (TVV / Đại sứ) | ✅ | tvv/tvv@123, ds/adc |
+| API Google Apps Script → Vercel | ✅ | Cache 5ph memory + 24h CDN |
+| Banner ngày vàng / ngày thường | ✅ | Tự động nhận diện |
+| Tra cứu ưu đãi (Topuni/Topclass/Gia sư) | ✅ | Search + filter |
+| Công cụ tính học phí | ✅ | 3 tabs |
+| Chọn loại KH (mới/cũ) | ✅ | Bắt buộc trước khi tính |
+| Ưu tiên Ngày vàng > Ngày thường | ✅ | |
+| **Logic Topuni combo Nền tảng** | ✅ | Chọn N khóa → M môn lớn nhất (M≤N) → áp discount cho TẤT CẢ N |
+| **Logic Topuni combo VIP 2 kỳ thi** | ✅ | 1 TD VIP + 1 TC VIP → combo discount 39-40% (KH mới/cũ) |
+| **Logic Topuni combo VIP+Luyện đề** | ✅ | 1 TD VIP + 1 Luyện đề TN → combo discount 42% |
+| **Phân loại VIP không giới hạn kỳ thi** | ✅ | TN THPT, HSA, TSA, QDA, V-ACT đều nhận diện đúng |
+| **Logic Topclass** | ✅ | Group theo productType + feePackage + quantity |
+| Logic Gia sư | ✅ | Tính riêng lẻ từng sản phẩm |
+| Nút xoá từng dòng kết quả | ✅ | Event listener trực tiếp |
+| Copy mã ưu đãi | ✅ | |
+| Deploy Vercel tự động | ✅ | vercel --prod --yes |
+
+### CẦN LÀM 📋
+
+| Hạng mục | Ưu tiên |
+|----------|---------|
+| Trang riêng cho Đại sứ (/daisu) | Cao |
+| Giao diện đặc thù Đại sứ | Cao |
+| Kiểm tra tổng thể logic Topclass | Trung bình |
+| Tối ưu mobile responsive | Thấp |
+
+### LOGIC TOPUNI — TỔNG KẾT (27/06)
+
+```
+Phân loại sản phẩm:
+├── Nền tảng            → "nền tảng"
+├── Toàn diện VIP       → "toàn diện vip" (mọi kỳ thi)
+├── Tiêu chuẩn VIP      → "tiêu chuẩn vip" (mọi kỳ thi)
+├── Luyện đề TN         → "luyện đề" + "tn thpt"
+├── Toàn diện TN        → "toàn diện" + "tn thpt"
+├── Tiêu chuẩn TN       → "tiêu chuẩn" + "tn thpt"
+└── Khác                → tính riêng lẻ
+
+Combo (xử lý theo thứ tự):
+1. Nền tảng: N khóa → M môn max (M≤N) → discount cho TẤT CẢ N
+2. VIP+Luyện đề: 1 TD VIP + 1 Luyện đề TN → 42% (KH cũ)
+3. VIP 2 kỳ thi: 1 TD VIP + 1 TC VIP → 40% (KH cũ)
+Sản phẩm dư sau combo → tính riêng lẻ
+```
+
+### LINK DEPLOY
+
+- **Production:** https://hocmai-tracuupromo.vercel.app/
+- **GitHub:** phuongthao1212neu-coder/hocmai-tracuupromo
+- **Apps Script:** `AKfycby4kur0pR41dc5x4TL1vUSk4EfXfU2GWvBJIvaAnswF39cwol6TjmrhGGITryOTRokH`
+
 *Plan này là bản nháp. Sau khi chị review và trả lời các câu hỏi ở mục 12, mình sẽ điều chỉnh và bắt tay vào làm.*
