@@ -44,11 +44,11 @@
           </label>
         </div>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="groupUsername">
         <label for="username">Tên đăng nhập</label>
         <input class="form-control" type="text" id="username" placeholder="Nhập tên đăng nhập">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="groupPassword">
         <label for="password">Mật khẩu</label>
         <input class="form-control" type="password" id="password" placeholder="Nhập mật khẩu">
       </div>
@@ -1278,11 +1278,15 @@
       $('#roleTVV').classList.add('active');
       $('#roleDS').classList.remove('active');
       $('#roleTVV input').checked = true;
+      $('#groupUsername').style.display = '';
+      $('#groupPassword').style.display = '';
     });
     $('#roleDS').addEventListener('click', () => {
       $('#roleDS').classList.add('active');
       $('#roleTVV').classList.remove('active');
       $('#roleDS input').checked = true;
+      $('#groupUsername').style.display = 'none';
+      $('#groupPassword').style.display = 'none';
     });
     $('#btnLogout').addEventListener('click', doLogout);
 
