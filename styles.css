@@ -75,55 +75,26 @@ body {
 .btn-logout:hover { background:rgba(255,255,255,.22); }
 
 /* ═══════ DAY BANNER ═══════ */
-.banner-group { margin-bottom:16px; }
-.day-banner {
-  display:none; width:100%;
-  padding:16px 20px; border-radius:16px;
-  align-items:center; gap:14px;
+/* ─── TAB BANNER (compact, theo từng tab) ─── */
+.tab-banner { margin-bottom:10px; }
+.tab-banner-inner {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 14px; border-radius:10px;
+  font-size:13px; font-weight:600;
   border:1px solid transparent;
-  transition:.2s;
 }
-.day-banner.show { display:flex; }
-.day-banner.golden {
-  background:linear-gradient(135deg,#FFF7ED 0%,#FED7AA 100%);
+.tab-banner-inner .tb-icon { font-size:16px; flex-shrink:0; }
+.tab-banner-inner .tb-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tab-banner-inner .tb-text strong { font-weight:700; margin-right:4px; }
+
+.tab-banner-inner.golden {
+  background:linear-gradient(135deg,#FFF7ED,#FED7AA);
   border-color:#FDBA74; color:#9A3412;
-  box-shadow:0 4px 16px rgba(251,146,60,.18);
-  position:relative; overflow:hidden;
 }
-.day-banner.golden::before {
-  content:''; position:absolute; top:-50%; right:-20%;
-  width:200px; height:200px; border-radius:50%;
-  background:rgba(251,191,36,.12);
-  pointer-events:none;
-}
-.day-banner.golden::after {
-  content:'✨'; position:absolute; bottom:8px; right:16px;
-  font-size:32px; opacity:.25; pointer-events:none;
-}
-.day-banner.normal {
-  background:linear-gradient(135deg,#EFF6FF 0%,#DBEAFE 100%);
+.tab-banner-inner.normal {
+  background:linear-gradient(135deg,#EFF6FF,#DBEAFE);
   border-color:#93C5FD; color:#1E40AF;
-  box-shadow:0 4px 16px rgba(59,130,246,.15);
-  position:relative; overflow:hidden;
 }
-.day-banner.normal::after {
-  content:'🎉'; position:absolute; bottom:8px; right:16px;
-  font-size:32px; opacity:.2; pointer-events:none;
-}
-.day-banner .b-icon {
-  width:44px; height:44px; border-radius:12px;
-  display:inline-flex; align-items:center; justify-content:center;
-  flex-shrink:0; font-size:22px;
-  background:rgba(255,255,255,.6);
-  backdrop-filter:blur(4px);
-  position:relative; z-index:1;
-}
-.day-banner .b-text { flex:1; min-width:0; position:relative; z-index:1; }
-.day-banner .b-text strong {
-  display:block; font-size:15px; line-height:1.3;
-  margin-bottom:2px;
-}
-.day-banner .b-text span { font-size:13px; opacity:.85; }
 
 /* ═══════ APP LAYOUT ═══════ */
 .app-layout {

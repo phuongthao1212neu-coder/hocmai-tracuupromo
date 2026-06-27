@@ -99,7 +99,6 @@
 
     <!-- ═══════ TAB: TRA CỨU ƯU ĐÃI ═══════ -->
     <div class="panel active" id="panelLookup">
-      <div id="bannerGroup" class="banner-group"></div>
       <div class="cat-tab-bar" id="catTabsLookup">
         <button class="cat-tab active" data-cat="topuni">Topuni</button>
         <button class="cat-tab" data-cat="topclass">Topclass</button>
@@ -110,12 +109,15 @@
         <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm, gói ưu đãi…">
       </div>
       <div class="cat-panel active" data-catpanel="topuni">
+        <div class="tab-banner" id="bannerTopuni"></div>
         <div class="table-wrapper" id="tableWrapTopuni"></div>
       </div>
       <div class="cat-panel" data-catpanel="topclass">
+        <div class="tab-banner" id="bannerTopclass"></div>
         <div class="table-wrapper" id="tableWrapTopclass"></div>
       </div>
       <div class="cat-panel" data-catpanel="giasu">
+        <div class="tab-banner" id="bannerGiasu"></div>
         <div class="table-wrapper" id="tableWrapGiasu"></div>
       </div>
     </div>
@@ -342,7 +344,7 @@
       if (!data.status || data.status !== 'ok') throw new Error(data.error || 'Data error');
       APP_DATA = data;
       $('#dataDate').textContent = data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('vi-VN') : data.today;
-      renderBanners();
+      renderTabBanner('topuni'); // banner theo tab đầu tiên
       ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
       ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
       hideLoading();
@@ -368,64 +370,40 @@
   }
 
   // ─── BANNER ─────────────────────────────────────────────────────────
-  function renderBanners() {
-    const wrap = $('#bannerGroup');
+// ─── RENDER TAB BANNER (theo từng tab sản phẩm) ──────────────────
+  function renderTabBanner(cat) {
+    var bannerId = 'banner' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    var wrap = $('#' + bannerId);
+    if (!wrap) return;
     wrap.innerHTML = '';
     if (!APP_DATA) return;
 
-    const cats = ['topuni', 'topclass', 'giasu'];
-    let bannerShown = false;
+    var promo = APP_DATA.promotions[cat];
+    if (!promo || !promo.activePeriods || promo.activePeriods.length === 0) return;
 
-    // Priority 1: golden period → show golden banner
-    for (const cat of cats) {
-      if (bannerShown) break;
-      const promo = APP_DATA.promotions[cat];
-      if (!promo || !promo.activePeriods || promo.activePeriods.length === 0) continue;
-      for (const pname of promo.activePeriods) {
-        if (bannerShown) break;
-        const period = (promo.periods || []).find(p => p.name === pname);
-        if (!period) continue;
-        const isGolden = (period.type || '').includes('golden') || pname.toLowerCase().includes('ngày vàng');
-        if (!isGolden) continue;
-
-        const div = document.createElement('div');
-        div.className = 'day-banner show golden';
-        div.innerHTML = `
-          <div class="b-icon">🎆</div>
-          <div class="b-text">
-            <strong>Ưu đãi ngày vàng đang diễn ra!</strong>
-            <span>${period.dateRange ? period.dateRange + ' — ' : ''}Chúc bạn chốt đơn thành công!</span>
-          </div>`;
-        wrap.appendChild(div);
-        bannerShown = true;
-      }
+    // Check for golden period first, then normal
+    var bestPeriod = null, isGolden = false;
+    for (var i = 0; i < promo.activePeriods.length; i++) {
+      var pname = promo.activePeriods[i];
+      var period = (promo.periods || []).find(function(p) { return p.name === pname; });
+      if (!period) continue;
+      var golden = (period.type || '').indexOf('golden') >= 0 || pname.toLowerCase().indexOf('ngày vàng') >= 0;
+      if (golden) { bestPeriod = period; isGolden = true; break; }
+      if (!bestPeriod) { bestPeriod = period; isGolden = false; }
     }
+    if (!bestPeriod) return;
 
-    // Priority 2: no golden → show normal banner
-    if (!bannerShown) {
-      for (const cat of cats) {
-        if (bannerShown) break;
-        const promo = APP_DATA.promotions[cat];
-        if (!promo || !promo.activePeriods || promo.activePeriods.length === 0) continue;
-        for (const pname of promo.activePeriods) {
-          if (bannerShown) break;
-          const period = (promo.periods || []).find(p => p.name === pname);
-          if (!period) continue;
-          const isGolden = (period.type || '').includes('golden') || pname.toLowerCase().includes('ngày vàng');
-          if (isGolden) continue;
-
-          const div = document.createElement('div');
-          div.className = 'day-banner show normal';
-          div.innerHTML = `
-            <div class="b-icon">🎉</div>
-            <div class="b-text">
-              <strong>Chương trình ưu đãi đang diễn ra!</strong>
-              <span>Áp dụng ${period.dateRange ? period.dateRange + ' — ' : ''}Chúc bạn chốt đơn thành công!</span>
-            </div>`;
-          wrap.appendChild(div);
-          bannerShown = true;
-        }
-      }
+    var dateRange = bestPeriod.dateRange || '';
+    if (isGolden) {
+      wrap.innerHTML = '<div class="tab-banner-inner golden">'
+        + '<span class="tb-icon">🌟</span>'
+        + '<span class="tb-text"><strong>Ngày vàng</strong> ' + dateRange + '</span>'
+        + '</div>';
+    } else {
+      wrap.innerHTML = '<div class="tab-banner-inner normal">'
+        + '<span class="tb-icon">📅</span>'
+        + '<span class="tb-text"><strong>Khuyến học</strong> ' + dateRange + '</span>'
+        + '</div>';
     }
   }
 
@@ -1290,6 +1268,7 @@
         const cat = btn.dataset.cat;
         $$('#panelLookup .cat-panel').forEach(p => p.classList.remove('active'));
         $(`#panelLookup .cat-panel[data-catpanel="${cat}"]`).classList.add('active');
+        renderTabBanner(cat);
       });
     });
 
