@@ -1002,18 +1002,21 @@
       }
 
       if (matchedPromo) {
-        // Use matchedPromo's promotions to get discount
         var best = getBestPromoForItem(matchedPromo, activePeriods, custType, codeField);
-        var finalP = best ? applyDiscount(totalListPrice, best) : totalListPrice;
-        results.push({
-          items: items.slice(),
-          listPrice: totalListPrice,
-          promo: best,
-          finalPrice: finalP,
-          savings: best ? (totalListPrice - finalP) : 0,
-          isCombo: false,
-          groupLabel: type + ' (' + qty + ' khóa)'
-        });
+        // Hiển thị từng sản phẩm riêng lẻ với tên trong danh mục
+        for (var m = 0; m < items.length; m++) {
+          var singleItem = items[m];
+          var singlePrice = singleItem.listPrice || 0;
+          var singleFinal = best ? applyDiscount(singlePrice, best) : singlePrice;
+          results.push({
+            items: [singleItem],
+            listPrice: singlePrice,
+            promo: best,
+            finalPrice: singleFinal,
+            savings: best ? (singlePrice - singleFinal) : 0,
+            isCombo: false
+          });
+        }
       } else {
         // No matched promo — use individual pricing
         for (var m = 0; m < items.length; m++) {
@@ -1173,43 +1176,58 @@
 
   // ─── REMOVE INDIVIDUAL CALC ROW ─────────────────────────────────────
   function removeCalcRow(cat, rowIdx, type) {
-    // Get the container for this category
     var containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
     var container = $('#' + containerId);
     if (!container) return;
 
-    var selected = getSelectedProducts(cat);
-    var allCheckboxes = $$('#calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1) + ' input[type="checkbox"]');
-
-    // Get the current result rows from DOM to identify which products this row represents
     var tableRows = container.querySelectorAll('.result-table tbody tr');
-    if (tableRows[rowIdx]) {
-      var nameCell = tableRows[rowIdx].querySelector('td:first-child');
-      if (nameCell) {
-        var productName = nameCell.textContent.trim();
+    if (!tableRows[rowIdx]) return;
 
-        // Find items in selected that match this name (partial match for combo names)
-        var itemsToUncheck = [];
-        for (var i = 0; i < selected.length; i++) {
-          var itemName = selected[i].name || selected[i].packageName || '';
-          if (itemName === productName ||
-              productName.indexOf(itemName) >= 0 ||
-              itemName.indexOf(productName) >= 0 ||
-              (productName.includes('COMBO') && productName.indexOf(itemName) >= 0)) {
-            itemsToUncheck.push(i);
-          }
+    var nameCell = tableRows[rowIdx].querySelector('td');
+    if (!nameCell) return;
+    var productName = nameCell.textContent.trim();
+    var isCombo = productName.indexOf('COMBO') >= 0;
+
+    // Duyệt qua TẤT CẢ checkbox trong panel, so sánh tên catalog item
+    var allCheckboxes = Array.from($$('#calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1) + ' input[type="checkbox"]'));
+    var catalog = (APP_DATA.catalogs || {})[cat] || [];
+
+    for (var c = 0; c < allCheckboxes.length; c++) {
+      var cb = allCheckboxes[c];
+      if (!cb.checked) continue;
+      var idx = parseInt(cb.dataset.idx, 10);
+      var item = catalog[idx];
+      if (!item) continue;
+      var itemName = (item.name || item.packageName || '').trim();
+      if (!itemName) continue;
+
+      if (isCombo) {
+        // Combo: tên item nằm trong tên combo
+        if (productName.indexOf(itemName) >= 0) {
+          cb.checked = false;
+          var li = cb.closest('.product-item');
+          if (li) li.classList.remove('selected');
+          cb.dispatchEvent(new Event('change'));
         }
-
-        // Uncheck matching checkboxes
-        for (var idx = 0; idx < itemsToUncheck.length; idx++) {
-          var cb = allCheckboxes[itemsToUncheck[idx]];
-          if (cb) {
-            cb.checked = false;
-            cb.closest('.product-item')?.classList.remove('selected');
-            cb.dispatchEvent(new Event('change'));
-          }
+      } else {
+        // Single: so sánh tên trực tiếp
+        if (productName === itemName || productName.indexOf(itemName) >= 0 || itemName.indexOf(productName) >= 0) {
+          cb.checked = false;
+          var li = cb.closest('.product-item');
+          if (li) li.classList.remove('selected');
+          cb.dispatchEvent(new Event('change'));
+          break;
         }
       }
+    }
+
+    // Xóa dòng khỏi bảng kết quả
+    tableRows[rowIdx].remove();
+
+    // Nếu không còn dòng nào -> hiện empty state
+    var remainingRows = container.querySelectorAll('.result-table tbody tr');
+    if (remainingRows.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>';
     }
   }
 
@@ -1339,6 +1357,9 @@
       if (clear) clear.addEventListener('click', () => clearCalc(cat));
     });
   }
+
+  // ─── EXPOSE TO GLOBAL SCOPE (for inline onclick handlers) ────────
+  window.removeCalcRow = removeCalcRow;
 
   // ─── INIT ──────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
