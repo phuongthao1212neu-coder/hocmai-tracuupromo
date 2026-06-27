@@ -130,7 +130,12 @@
       <div class="cat-panel active" data-catpanel="topuni">
         <div class="calc-layout" id="calcPanelTopuni">
           <div class="calc-left">
-            <div class="calc-count" id="prodCountTopuni">0 sản phẩm</div>
+            <div class="calc-header-row">
+              <div class="calc-count" id="prodCountTopuni">0 sản phẩm</div>
+              <div class="calc-search">
+                <input type="text" class="calc-search-input" data-cat="topuni" placeholder="🔍 Tìm sản phẩm...">
+              </div>
+            </div>
             <ul class="prod-list" id="prodListTopuni"></ul>
           </div>
           <div class="calc-right">
@@ -147,7 +152,12 @@
       <div class="cat-panel" data-catpanel="topclass">
         <div class="calc-layout" id="calcPanelTopclass">
           <div class="calc-left">
-            <div class="calc-count" id="prodCountTopclass">0 sản phẩm</div>
+            <div class="calc-header-row">
+              <div class="calc-count" id="prodCountTopclass">0 sản phẩm</div>
+              <div class="calc-search">
+                <input type="text" class="calc-search-input" data-cat="topclass" placeholder="🔍 Tìm sản phẩm...">
+              </div>
+            </div>
             <ul class="prod-list" id="prodListTopclass"></ul>
           </div>
           <div class="calc-right">
@@ -164,7 +174,12 @@
       <div class="cat-panel" data-catpanel="giasu">
         <div class="calc-layout" id="calcPanelGiasu">
           <div class="calc-left">
-            <div class="calc-count" id="prodCountGiasu">0 sản phẩm</div>
+            <div class="calc-header-row">
+              <div class="calc-count" id="prodCountGiasu">0 sản phẩm</div>
+              <div class="calc-search">
+                <input type="text" class="calc-search-input" data-cat="giasu" placeholder="🔍 Tìm sản phẩm...">
+              </div>
+            </div>
             <ul class="prod-list" id="prodListGiasu"></ul>
           </div>
           <div class="calc-right">
@@ -194,20 +209,31 @@
   const formatDiscount = (v) => {
     if (v === null || v === undefined) return '';
     if (typeof v === 'number') {
-      if (v <= 1) return '-' + Math.round(v * 100) + '%';
-      return '-' + formatPrice(v);
+      if (v <= 1) return Math.round(v * 100) + '%';
+      return formatPrice(v);
     }
     return String(v);
   };
   const copyText = (text, el) => {
     navigator.clipboard.writeText(text).then(() => {
       el.textContent = '✓';
-      setTimeout(() => el.textContent = '📋', 1500);
+      el.classList.add('copied');
+      setTimeout(() => { el.textContent = '📋'; el.classList.remove('copied'); }, 1500);
     }).catch(() => {
-      el.textContent = '✕';
+      // Fallback for older browsers: select text method
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      el.textContent = '✓';
       setTimeout(() => el.textContent = '📋', 1500);
     });
   };
+  // Export globally so inline onclick handlers work
+  window.copyText = copyText;
 
   // ─── STATE ────────────────────────────────────────────────────────
   let ROLE = null;
@@ -294,7 +320,7 @@
       $('#dataDate').textContent = data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('vi-VN') : data.today;
       renderBanners();
       ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
-      ['topuni', 'topclass', 'giasu'].forEach(c => buildCalcProductList(c));
+      ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
       hideLoading();
     } catch (err) {
       clearTimeout(fetchTimeout);
@@ -334,13 +360,16 @@
         const period = (promo.periods || []).find(p => p.name === pname);
         if (!period) continue;
         const isGolden = (period.type || '').includes('golden') || pname.toLowerCase().includes('ngày vàng');
+        // NEW: Chỉ hiển thị banner cho ngày vàng, không hiển thị cho ngày thường
+        if (!isGolden) continue;
         const div = document.createElement('div');
-        div.className = 'day-banner show ' + (isGolden ? 'golden' : 'normal');
+        div.className = 'day-banner show golden';
+        // NEW: Nội dung banner đúng theo yêu cầu
         div.innerHTML = `
-          <div class="b-icon">${isGolden ? '🌟' : '🟢'}</div>
+          <div class="b-icon">🌟</div>
           <div class="b-text">
-            <strong>${isGolden ? '🔥 Ưu đãi ngày vàng đang diễn ra!' : 'Chương trình ưu đãi đang diễn ra!'}</strong>
-            <span>${pname}</span>
+            <strong>🔥 Ưu đãi ngày vàng đang diễn ra!</strong>
+            <span>Ưu đãi ngày vàng đang diễn ra từ ${period.dateRange || '01/01/2026 đến 01/02/2026'}. Chúc bạn chốt đơn thành công!</span>
           </div>`;
         wrap.appendChild(div);
       }
@@ -350,7 +379,7 @@
   // ─── PROMO TABLE ────────────────────────────────────────────────────
   function getFixedHeaders(cat) {
     if (cat === 'topuni') return ['Gói ưu đãi', 'Sản phẩm trong gói', 'Học phí'];
-    if (cat === 'topclass') return ['Loại SP', 'Gói HP', 'Khối lớp', 'Môn học', 'SL'];
+    if (cat === 'topclass') return ['Loại SP', 'Gói HP', 'Khối lớp', 'Môn học', 'Số lượng/\nLần Đăng kí'];
     if (cat === 'giasu') return ['Loại SP', 'Số buổi', 'HP/buổi', 'Tổng HP'];
     return [];
   }
@@ -403,9 +432,9 @@
       let discountText;
       let cls = pType === 'golden' ? 'tu-price-golden' : 'tu-discount';
       if (data.discount <= 1) {
-        discountText = '-' + Math.round(data.discount * 100) + '%';
+        discountText = Math.round(data.discount * 100) + '%';
       } else {
-        discountText = '-' + formatPrice(data.discount);
+        discountText = formatPrice(data.discount);
         cls += ' discount-fixed';
       }
       discountHtml = `<div class="${cls}">${discountText}</div>`;
@@ -533,21 +562,48 @@
     buildPromoTable(cat);
   }
 
-  // ─── CALCULATOR ─────────────────────────────────────────────────────
-  function buildCalcProductList(cat) {
+  // ─── CALC SEARCH ──────────────────────────────────────────────────
+  let CALC_FILTERS = { topuni: '', topclass: '', giasu: '' };
+
+  function getCalcCatalog(cat) {
+    return (APP_DATA.catalogs || {})[cat] || [];
+  }
+
+  function filterCalcProducts(cat, query) {
+    const q = query.toLowerCase().trim();
+    const catalog = getCalcCatalog(cat);
+    if (!q) return catalog;
+    return catalog.filter(item => {
+      const name = getCalcProductName(cat, item).toLowerCase();
+      const sub = getCalcProductSub(cat, item).toLowerCase();
+      return name.includes(q) || sub.includes(q);
+    });
+  }
+
+  function renderCalcProductList(cat) {
     if (!APP_DATA) return;
-    // Calculator uses catalog from DanhmucSP sheets
-    const catalog = (APP_DATA.catalogs || {})[cat] || [];
     const listId = 'prodList' + cat.charAt(0).toUpperCase() + cat.slice(1);
     const countId = 'prodCount' + cat.charAt(0).toUpperCase() + cat.slice(1);
     const list = $('#' + listId);
     const countEl = $('#' + countId);
     if (!list) return;
 
+    const filtered = filterCalcProducts(cat, CALC_FILTERS[cat]);
+    const fullCatalog = getCalcCatalog(cat);
+
     list.innerHTML = '';
-    for (let i = 0; i < catalog.length; i++) {
-      const item = catalog[i];
+    let visibleCount = 0;
+    for (let i = 0; i < fullCatalog.length; i++) {
+      const item = fullCatalog[i];
       const name = getCalcProductName(cat, item);
+      // Check if this item passes the filter
+      const q = CALC_FILTERS[cat].toLowerCase().trim();
+      if (q) {
+        const nameL = name.toLowerCase();
+        const subL = getCalcProductSub(cat, item).toLowerCase();
+        if (!nameL.includes(q) && !subL.includes(q)) continue;
+      }
+      visibleCount++;
       const price = item.listPrice || item.totalListPrice || 0;
       const li = document.createElement('li');
       li.className = 'product-item';
@@ -570,7 +626,7 @@
       });
       list.appendChild(li);
     }
-    countEl.textContent = catalog.length + ' sản phẩm';
+    countEl.textContent = visibleCount + '/' + fullCatalog.length + ' sản phẩm';
   }
 
   function getCalcProductName(cat, item) {
@@ -735,7 +791,7 @@
         const panel = tab === 'lookup' ? $('#panelLookup') : $('#panelCalc');
         panel.classList.add('active');
         if (tab === 'calc') {
-          ['topuni', 'topclass', 'giasu'].forEach(c => buildCalcProductList(c));
+          ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
         }
       });
     });
@@ -759,7 +815,7 @@
         const cat = btn.dataset.cat;
         $$('#panelCalc .cat-panel').forEach(p => p.classList.remove('active'));
         $(`#panelCalc .cat-panel[data-catpanel="${cat}"]`).classList.add('active');
-        buildCalcProductList(cat);
+        renderCalcProductList(cat);
       });
     });
 
@@ -769,13 +825,25 @@
       rebuildVisibleTables();
     });
 
+    // Calc search inputs
+    $$('.calc-search-input').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        const cat = e.target.dataset.cat;
+        CALC_FILTERS[cat] = e.target.value;
+        renderCalcProductList(cat);
+      });
+    });
+
     // Calc buttons
     ['topuni', 'topclass', 'giasu'].forEach(cat => {
       const btnId = 'btnCalc' + cat.charAt(0).toUpperCase() + cat.slice(1);
       const clearId = 'btnClear' + cat.charAt(0).toUpperCase() + cat.slice(1);
       const btn = $('#' + btnId);
       const clear = $('#' + clearId);
-      if (btn) btn.addEventListener('click', () => calculateFee(cat));
+      if (btn) btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        calculateFee(cat);
+      });
       if (clear) clear.addEventListener('click', () => clearCalc(cat));
     });
   }
