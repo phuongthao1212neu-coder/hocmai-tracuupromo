@@ -349,14 +349,15 @@ function enrichCatalogWithPromotions(catalogItems, promotionItems, matchFn) {
 // =========================================================================
 // Handler
 // =========================================================================
-const RESPONSE_CACHE_TTL_MS = 60 * 1000;
+const RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache memory
 let responseCache = { data: null, expiresAt: 0 };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Cache-Control', 'public, s-maxage=60, max-age=60, stale-while-revalidate=120');
+  // CDN cache: 5 phút (s-maxage=300), stale-while-revalidate 24h cho failover
+  res.setHeader('Cache-Control', 'public, s-maxage=300, max-age=60, stale-while-revalidate=86400, stale-if-error=86400');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   // Có cache trong memory → trả luôn
@@ -368,7 +369,7 @@ export default async function handler(req, res) {
   const today = getTodayGMT7();
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout (Apps Script cần ~9s)
 
     const fetchRes = await fetch(APPS_SCRIPT_URL, {
       redirect: 'follow',
@@ -439,6 +440,7 @@ export default async function handler(req, res) {
       res.setHeader('X-Cache', 'STALE-ERROR');
       return res.status(200).json(responseCache.data);
     }
+    // Không có cache → trả lỗi rõ ràng
     return res.status(502).json({
       ok: false, error: String(err?.message || err),
       fetchedAt: new Date().toISOString(), today
