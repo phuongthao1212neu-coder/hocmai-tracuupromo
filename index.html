@@ -136,6 +136,14 @@
                 <input type="text" class="calc-search-input" data-cat="topuni" placeholder="🔍 Tìm sản phẩm...">
               </div>
             </div>
+            <div class="cust-type-selector" id="custTypeTopuni">
+              <label class="cust-type-option">
+                <input type="radio" name="custTypeTopuni" value="new"> <span>KH mới</span>
+              </label>
+              <label class="cust-type-option">
+                <input type="radio" name="custTypeTopuni" value="old"> <span>KH cũ</span>
+              </label>
+            </div>
             <ul class="prod-list" id="prodListTopuni"></ul>
           </div>
           <div class="calc-right">
@@ -144,7 +152,7 @@
               <button class="btn-clear" id="btnClearTopuni">✕ Xóa chọn</button>
             </div>
             <div class="result-area" id="calcResultTopuni">
-              <div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>
+              <div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>
             </div>
           </div>
         </div>
@@ -158,6 +166,14 @@
                 <input type="text" class="calc-search-input" data-cat="topclass" placeholder="🔍 Tìm sản phẩm...">
               </div>
             </div>
+            <div class="cust-type-selector" id="custTypeTopclass">
+              <label class="cust-type-option">
+                <input type="radio" name="custTypeTopclass" value="new"> <span>KH mới</span>
+              </label>
+              <label class="cust-type-option">
+                <input type="radio" name="custTypeTopclass" value="old"> <span>KH cũ</span>
+              </label>
+            </div>
             <ul class="prod-list" id="prodListTopclass"></ul>
           </div>
           <div class="calc-right">
@@ -166,7 +182,7 @@
               <button class="btn-clear" id="btnClearTopclass">✕ Xóa chọn</button>
             </div>
             <div class="result-area" id="calcResultTopclass">
-              <div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>
+              <div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>
             </div>
           </div>
         </div>
@@ -180,6 +196,14 @@
                 <input type="text" class="calc-search-input" data-cat="giasu" placeholder="🔍 Tìm sản phẩm...">
               </div>
             </div>
+            <div class="cust-type-selector" id="custTypeGiasu">
+              <label class="cust-type-option">
+                <input type="radio" name="custTypeGiasu" value="new"> <span>KH mới</span>
+              </label>
+              <label class="cust-type-option">
+                <input type="radio" name="custTypeGiasu" value="old"> <span>KH cũ</span>
+              </label>
+            </div>
             <ul class="prod-list" id="prodListGiasu"></ul>
           </div>
           <div class="calc-right">
@@ -188,7 +212,7 @@
               <button class="btn-clear" id="btnClearGiasu">✕ Xóa chọn</button>
             </div>
             <div class="result-area" id="calcResultGiasu">
-              <div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>
+              <div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>
             </div>
           </div>
         </div>
@@ -622,35 +646,34 @@
     const countEl = $('#' + countId);
     if (!list) return;
 
-    const filtered = filterCalcProducts(cat, CALC_FILTERS[cat]);
     const fullCatalog = getCalcCatalog(cat);
+    const custType = getSelectedCustType(cat);
 
     list.innerHTML = '';
     let visibleCount = 0;
     for (let i = 0; i < fullCatalog.length; i++) {
       const item = fullCatalog[i];
       const name = getCalcProductName(cat, item);
-      // Check if this item passes the filter
-      const q = CALC_FILTERS[cat].toLowerCase().trim();
-      if (q) {
-        const nameL = name.toLowerCase();
-        const subL = getCalcProductSub(cat, item).toLowerCase();
-        if (!nameL.includes(q) && !subL.includes(q)) continue;
-      }
+      const sub = getCalcProductSub(cat, item);
+      const q = (CALC_FILTERS[cat] || '').toLowerCase().trim();
+      if (q && !name.toLowerCase().includes(q) && !sub.toLowerCase().includes(q)) continue;
       visibleCount++;
       const price = item.listPrice || item.totalListPrice || 0;
       const li = document.createElement('li');
       li.className = 'product-item';
+      const isVACTcombo = cat === 'topuni' && (item.name || '').toLowerCase().includes('v-act') || item.isVACT || item.packageName?.toLowerCase().includes('combo');
       li.innerHTML = `
-        <input type="checkbox" data-idx="${i}" id="calc_${cat}_${i}">
+        <input type="checkbox" data-idx="${i}" id="calc_${cat}_${i}" ${custType ? '' : 'disabled'}>
         <div class="product-info">
           <label class="product-name" for="calc_${cat}_${i}">${name}</label>
-          <span class="product-sub">${getCalcProductSub(cat, item)}</span>
+          <span class="product-sub">${sub}</span>
         </div>
-        <div class="product-price">${formatPrice(price)}</div>`;
+        <div class="product-price">${formatPrice(price)}</div>
+        ${isVACTcombo ? '<div class="vact-badge">V-ACT COMBO</div>' : ''}`;
       li.addEventListener('click', (e) => {
         if (e.target.tagName === 'INPUT') return;
         const cb = li.querySelector('input[type="checkbox"]');
+        if (cb.disabled) return;
         cb.checked = !cb.checked;
         cb.dispatchEvent(new Event('change'));
       });
@@ -691,103 +714,246 @@
     const btnId = 'btnCalc' + cat.charAt(0).toUpperCase() + cat.slice(1);
     const btn = $('#' + btnId);
     if (!btn) return;
+    const custType = getSelectedCustType(cat);
     const selected = getSelectedProducts(cat);
-    btn.disabled = selected.length === 0;
+    btn.disabled = !custType || selected.length === 0;
   }
 
-  function calcBestPromo(item, activePeriods) {
-    const promos = item.promotions || {};
-    const result = { new: null, old: null };
-    for (const pname of activePeriods) {
-      const periodPromo = promos[pname] || {};
-      for (const [ctype, data] of Object.entries(periodPromo)) {
-        if (!data) continue;
-        const key = (ctype === 'new' || ctype === 'all' || ctype === 'upgrade') ? 'new' :
-                    (ctype === 'old' || ctype === 'all') ? 'old' : ctype;
-        if (!result[key]) {
-          result[key] = { ...data, periodName: pname, custType: ctype };
+  // ─── COMBO DETECTION (Topuni) ────────────────────────────────────
+  function detectTopuniCombo(selected) {
+    // Check if selected items contain a "toàn diện VIP" + "tiêu chuẩn VIP" pair
+    // with the same exam suffix (everything after "VIP" before " - Năm học")
+    const vipItems = { toanDien: [], tieuChuan: [] };
+    for (const item of selected) {
+      const name = item.name || '';
+      if (name.includes('toàn diện VIP')) {
+        vipItems.toanDien.push(item);
+      } else if (name.includes('tiêu chuẩn VIP')) {
+        vipItems.tieuChuan.push(item);
+      }
+    }
+    // Find matching pairs by comparing the exam suffix after "VIP"
+    const pairs = [];
+    for (const td of vipItems.toanDien) {
+      // Extract suffix after "VIP" and before " - Năm học"
+      const tdSuffix = (td.name || '').split('VIP')[1]?.split(' - Năm')[0]?.trim() || '';
+      for (const tc of vipItems.tieuChuan) {
+        const tcSuffix = (tc.name || '').split('VIP')[1]?.split(' - Năm')[0]?.trim() || '';
+        if (tdSuffix && tdSuffix === tcSuffix) {
+          pairs.push({ toanDien: td, tieuChuan: tc, suffix: tdSuffix });
         }
       }
     }
-    return result;
+    return pairs;
+  }
+
+  function getSelectedCustType(cat) {
+    const selector = $('#custType' + cat.charAt(0).toUpperCase() + cat.slice(1));
+    if (!selector) return null;
+    const checked = selector.querySelector('input[type="radio"]:checked');
+    return checked ? checked.value : null;
+  }
+
+  function getActivePeriodType(cat) {
+    const promo = (APP_DATA.promotions || {})[cat] || {};
+    const activeNames = promo.activePeriods || [];
+    // Check if any active period is golden
+    const hasGolden = activeNames.some(n => n.toLowerCase().includes('ngày vàng'));
+    if (hasGolden) return 'golden';
+    if (activeNames.length > 0) return 'normal';
+    return 'none';
+  }
+
+  function findPromoForProduct(item, activePeriods, custType) {
+    const promos = item.promotions || {};
+    // Determine which custType key to look for
+    // Map user-facing 'new'/'old' to promo keys: new, old, all, upgrade
+    const targetKeys = custType === 'new' ? ['new', 'all', 'upgrade'] : ['old', 'all', 'upgrade'];
+
+    for (const pname of activePeriods) {
+      const periodPromo = promos[pname] || {};
+      for (const tkey of targetKeys) {
+        if (periodPromo[tkey]) {
+          return { ...periodPromo[tkey], periodName: pname, custType: tkey };
+        }
+      }
+    }
+    return null;
   }
 
   function calculateFee(cat) {
+    const custType = getSelectedCustType(cat);
+    if (!custType) {
+      // No customer type selected — focus the first radio and show a brief reminder
+      const selId = 'custType' + cat.charAt(0).toUpperCase() + cat.slice(1);
+      const firstRadio = $('#' + selId + ' input[type="radio"]');
+      if (firstRadio) firstRadio.focus();
+      return;
+    }
+
     const selected = getSelectedProducts(cat);
     if (selected.length === 0) return;
-    const codeField = CREDENTIALS[ROLE].codeField;
-    const codeLabel = CREDENTIALS[ROLE].codeLabel;
+
     const promo = (APP_DATA.promotions || {})[cat] || {};
     const activePeriods = promo.activePeriods || [];
+    if (activePeriods.length === 0) {
+      const containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
+      const container = $('#' + containerId);
+      if (container) container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Hiện chưa có chương trình ưu đãi nào đang diễn ra</p></div>';
+      return;
+    }
+
+    const periodType = getActivePeriodType(cat);
+    const codeField = CREDENTIALS[ROLE].codeField;
+    const codeLabel = CREDENTIALS[ROLE].codeLabel;
 
     const rows = [];
-    for (const item of selected) {
-      const listPrice = item.listPrice || 0;
-      const bestPromo = calcBestPromo(item, activePeriods);
-      let hpNew = listPrice, hpOld = listPrice;
-      let saveNew = 0, saveOld = 0;
-      let codeNew = '—', codeOld = '—';
 
-      if (bestPromo.new) {
-        const d = bestPromo.new;
-        if (d.finalPrice != null && d.finalPrice < listPrice) hpNew = d.finalPrice;
-        else if (d.discount != null) {
-          hpNew = d.discount <= 1 ? Math.round(listPrice * (1 - d.discount)) : Math.max(0, listPrice - d.discount);
-        }
-        saveNew = Math.max(0, listPrice - hpNew);
-        codeNew = d[codeField] || '—';
-      }
-      if (bestPromo.old) {
-        const d = bestPromo.old;
-        if (d.finalPrice != null && d.finalPrice < listPrice) hpOld = d.finalPrice;
-        else if (d.discount != null) {
-          hpOld = d.discount <= 1 ? Math.round(listPrice * (1 - d.discount)) : Math.max(0, listPrice - d.discount);
-        }
-        saveOld = Math.max(0, listPrice - hpOld);
-        codeOld = d[codeField] || '—';
-      }
-
-      rows.push({ name: getCalcProductName(cat, item), listPrice, hpNew, hpOld, saveNew, saveOld, codeNew, codeOld });
+    // ── Topuni: detect combos ──
+    let comboPairs = [];
+    if (cat === 'topuni') {
+      comboPairs = detectTopuniCombo(selected);
     }
-    renderCalcResult(cat, rows, codeLabel);
+
+    // Track which items are part of a combo, so we skip them individually
+    const comboItemSet = new Set();
+    for (const pair of comboPairs) {
+      comboItemSet.add(pair.toanDien);
+      comboItemSet.add(pair.tieuChuan);
+    }
+
+    // ── Render combo pairs ──
+    for (const pair of comboPairs) {
+      const toanDien = pair.toanDien;
+      const tieuChuan = pair.tieuChuan;
+      const comboPrice = (toanDien.listPrice || 0) + (tieuChuan.listPrice || 0);
+      const comboName = 'Combo toàn diện VIP 2 kỳ thi ' + pair.suffix;
+
+      // Try to find combo-level discount
+      const tdPromo = findPromoForProduct(toanDien, activePeriods, custType);
+      const tcPromo = findPromoForProduct(tieuChuan, activePeriods, custType);
+
+      let discount = null;
+      let code = '—';
+      let finalPrice = comboPrice;
+
+      // Use the larger discount of the two components as combo discount
+      if (tdPromo || tcPromo) {
+        const tdDisc = tdPromo?.discount ?? 0;
+        const tcDisc = tcPromo?.discount ?? 0;
+        const tdCode = tdPromo?.[codeField] || '—';
+        const tcCode = tcPromo?.[codeField] || '—';
+        // For combo, use the best (largest) discount
+        discount = Math.max(tdDisc, tcDisc);
+        code = tdCode !== '—' ? tdCode : tcCode;
+        if (discount <= 1) {
+          finalPrice = Math.round(comboPrice * (1 - discount));
+        } else {
+          finalPrice = Math.max(0, comboPrice - discount);
+        }
+      }
+
+      rows.push({
+        name: comboName,
+        listPrice: comboPrice,
+        discount: discount,
+        finalPrice: finalPrice,
+        savings: Math.max(0, comboPrice - finalPrice),
+        code: code,
+        isCombo: true,
+        comboComponents: [toanDien.name, tieuChuan.name]
+      });
+    }
+
+    // ── Render individual items (excluding those in combos) ──
+    for (const item of selected) {
+      if (comboItemSet.has(item)) continue;
+
+      const listPrice = item.listPrice || item.totalListPrice || 0;
+      const bestPromo = findPromoForProduct(item, activePeriods, custType);
+
+      let discount = null;
+      let finalPrice = listPrice;
+      let code = '—';
+
+      if (bestPromo) {
+        if (bestPromo.discount != null) discount = bestPromo.discount;
+        if (bestPromo.finalPrice != null && bestPromo.finalPrice < listPrice) {
+          finalPrice = bestPromo.finalPrice;
+        } else if (discount != null) {
+          finalPrice = discount <= 1
+            ? Math.round(listPrice * (1 - discount))
+            : Math.max(0, listPrice - discount);
+        }
+        code = bestPromo[codeField] || '—';
+      }
+
+      const savings = Math.max(0, listPrice - finalPrice);
+
+      rows.push({
+        name: getCalcProductName(cat, item),
+        listPrice: listPrice,
+        discount: discount,
+        finalPrice: finalPrice,
+        savings: savings,
+        code: code,
+        isCombo: false,
+        comboComponents: null
+      });
+    }
+
+    renderCalcResult(cat, rows, codeLabel, custType, periodType);
   }
 
-  function renderCalcResult(cat, rows, codeLabel) {
+  function renderCalcResult(cat, rows, codeLabel, custType, periodType) {
     const containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
     const container = $('#' + containerId);
     if (!container) return;
 
-    let totalOriginal = 0, totalNew = 0, totalOld = 0, totalSaveNew = 0, totalSaveOld = 0;
-    let html = '<div class="table-wrapper"><table class="result-table"><thead><tr>';
-    html += '<th>Sản phẩm</th><th>HP gốc</th><th>KH mới (HP)</th><th>KH cũ (HP)</th><th>Tiết kiệm</th>';
-    html += `<th>${codeLabel} mới</th><th>${codeLabel} cũ</th>`;
+    let totalOriginal = 0, totalFinal = 0, totalSavings = 0;
+
+    let periodBadge = periodType === 'golden'
+      ? '<span class="period-badge golden">🌟 Ngày vàng</span>'
+      : '<span class="period-badge normal">📅 Ngày thường</span>';
+
+    let html = '<div class="calc-result-header">'
+      + periodBadge
+      + '<span class="cust-badge">KH <strong>' + (custType === 'new' ? 'MỚI' : 'CŨ') + '</strong></span>'
+      + '</div>';
+    html += '<div class="table-wrapper"><table class="result-table"><thead><tr>';
+    html += '<th>Sản phẩm</th><th>HP gốc</th><th>Ưu đãi</th><th>HP sau ưu đãi</th><th>Tiết kiệm</th>';
+    html += `<th>${codeLabel}</th>`;
     html += '</tr></thead><tbody>';
 
     for (const r of rows) {
       totalOriginal += r.listPrice;
-      totalNew += r.hpNew;
-      totalOld += r.hpOld;
-      totalSaveNew += r.saveNew;
-      totalSaveOld += r.saveOld;
-      html += '<tr>';
-      html += `<td style="text-align:left;font-weight:600">${r.name}</td>`;
-      html += `<td class="price-original">${formatPrice(r.listPrice)}</td>`;
-      html += `<td class="price-final">${formatPrice(r.hpNew)}</td>`;
-      html += `<td class="price-final">${formatPrice(r.hpOld)}</td>`;
-      html += `<td class="price-save">${r.saveNew > 0 ? '-' + formatPrice(r.saveNew) : '—'}</td>`;
-      html += `<td><span class="tu-code-badge">${r.codeNew}</span> ${r.codeNew !== '—' ? `<button class="copy-icon" title="Sao chép" onclick="copyText('${r.codeNew}', this)">📋</button>` : ''}</td>`;
-      html += `<td><span class="tu-code-badge">${r.codeOld}</span> ${r.codeOld !== '—' ? `<button class="copy-icon" title="Sao chép" onclick="copyText('${r.codeOld}', this)">📋</button>` : ''}</td>`;
+      totalFinal += r.finalPrice;
+      totalSavings += r.savings;
+
+      html += '<tr' + (r.isCombo ? ' class="combo-row"' : '') + '>';
+      html += '<td style="text-align:left;font-weight:600">';
+      if (r.isCombo) html += '<span class="combo-tag">COMBO</span> ';
+      html += r.name + '</td>';
+      html += '<td class="price-original">' + formatPrice(r.listPrice) + '</td>';
+      html += '<td class="price-discount">'
+        + (r.discount != null ? formatDiscount(r.discount) : '—')
+        + '</td>';
+      html += '<td class="price-final">' + formatPrice(r.finalPrice) + '</td>';
+      html += '<td class="price-save">' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
+      html += '<td>' + (r.code !== '—'
+        ? '<span class="tu-code-badge">' + r.code + '</span> <button class="copy-icon" title="Sao chép" onclick="copyText(&#39;' + r.code + '&#39;, this)">📋</button>'
+        : '—') + '</td>';
       html += '</tr>';
     }
+
     html += '</tbody></table></div>';
 
     html += '<div class="summary-row">';
-    html += `<div class="summary-item"><span class="s-label">Tổng HP gốc</span><span class="s-value">${formatPrice(totalOriginal)}</span></div>`;
-    html += `<div class="summary-item"><span class="s-label">Tổng HP KH mới</span><span class="s-value green">${formatPrice(totalNew)}</span></div>`;
-    html += `<div class="summary-item"><span class="s-label">Tổng HP KH cũ</span><span class="s-value">${formatPrice(totalOld)}</span></div>`;
-    html += `<div class="summary-item"><span class="s-label">Tiết kiệm KH mới</span><span class="s-value green">-${formatPrice(totalSaveNew)}</span></div>`;
-    html += `<div class="summary-item"><span class="s-label">Tiết kiệm KH cũ</span><span class="s-value green">-${formatPrice(totalSaveOld)}</span></div>`;
+    html += '<div class="summary-item"><span class="s-label">Tổng HP gốc</span><span class="s-value">' + formatPrice(totalOriginal) + '</span></div>';
+    html += '<div class="summary-item"><span class="s-label">Tổng HP sau ưu đãi</span><span class="s-value green">' + formatPrice(totalFinal) + '</span></div>';
+    html += '<div class="summary-item"><span class="s-label">Tổng tiết kiệm</span><span class="s-value green">-' + formatPrice(totalSavings) + '</span></div>';
     html += '</div>';
+
     container.innerHTML = html;
   }
 
@@ -865,6 +1031,20 @@
         const cat = e.target.dataset.cat;
         CALC_FILTERS[cat] = e.target.value;
         renderCalcProductList(cat);
+      });
+    });
+
+    // Calc custType radio buttons — re-enable/disable checkboxes
+    $$('.cust-type-selector input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        // Find the parent cat-panel
+        const panel = e.target.closest('.cat-panel');
+        if (!panel) return;
+        const cat = panel.dataset.catpanel;
+        // Enable all checkboxes in this panel
+        const checkboxes = panel.querySelectorAll('.prod-list input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.disabled = false);
+        updateCalcButton(cat);
       });
     });
 

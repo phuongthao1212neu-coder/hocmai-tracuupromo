@@ -510,6 +510,76 @@ body {
 
 .result-table .tu-code-badge { font-size: 10px; }
 
+/* ═══════ CALCULATOR — NEW ELEMENTS ═══════ */
+.cust-type-selector {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 8px;
+  padding: 8px 12px;
+  background: #F8FAFC;
+  border: 1px solid #E8EEF6;
+  border-radius: var(--radius);
+  align-items: center;
+}
+.cust-type-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hm-text);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  transition: .15s;
+  user-select: none;
+}
+.cust-type-option:hover { background: #EFF6FF; }
+.cust-type-option input[type="radio"] {
+  accent-color: var(--hm-blue);
+  width: 16px; height: 16px;
+}
+.cust-type-option:has(input:checked) {
+  background: linear-gradient(135deg, var(--hm-blue-soft), #DBEAFE);
+  color: var(--hm-blue-dark);
+  box-shadow: 0 0 0 2px var(--hm-blue);
+}
+.cust-type-option input[disabled] + span { opacity: .5; cursor: not-allowed; }
+.product-item input[type="checkbox"]:disabled { opacity: .5; cursor: not-allowed; }
+.product-item input[type="checkbox"]:disabled + .product-info { opacity: .6; }
+
+/* Result header badges */
+.calc-result-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+.period-badge { padding: 4px 10px; border-radius: 999px; font-weight: 800; }
+.period-badge.golden { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #92400E; }
+.period-badge.normal { background: linear-gradient(135deg, var(--hm-blue-soft), #DBEAFE); color: var(--hm-blue-dark); }
+.cust-badge { padding: 4px 10px; border-radius: 999px; background: #F3F4F6; color: #374151; }
+.cust-badge strong { font-weight: 800; }
+
+/* Result table new columns */
+.result-table .price-discount { font-weight: 700; color: var(--hm-orange); font-size: 12px; }
+.result-table .combo-row { background: linear-gradient(90deg, #FFF7ED, #FFF); }
+.result-table .combo-row:hover td { background: linear-gradient(90deg, #FFEDD5, #F8FAFC); }
+.combo-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--hm-orange), var(--hm-orange-dark));
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
 .summary-row {
   display: flex;
   gap: 14px;
