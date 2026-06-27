@@ -359,6 +359,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, s-maxage=60, max-age=60, stale-while-revalidate=120');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Có cache trong memory → trả luôn
   if (responseCache.data && Date.now() < responseCache.expiresAt) {
     res.setHeader('X-Cache', 'HIT-MEMORY');
     return res.status(200).json(responseCache.data);
@@ -366,10 +367,33 @@ export default async function handler(req, res) {
 
   const today = getTodayGMT7();
   try {
-    const fetchRes = await fetch(APPS_SCRIPT_URL, { redirect: 'follow', headers: { Accept: 'application/json' } });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
+
+    const fetchRes = await fetch(APPS_SCRIPT_URL, {
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Vercel-Serverless/1.0',
+        'Cache-Control': 'no-cache'
+      }
+    });
+    clearTimeout(timeoutId);
+
     if (!fetchRes.ok) {
-      return res.status(502).json({ ok: false, error: `Apps Script returned HTTP ${fetchRes.status}`, fetchedAt: new Date().toISOString(), today });
+      // Nếu có cache cũ (dù hết hạn) → trả cache thay vì báo lỗi
+      if (responseCache.data) {
+        console.warn(`Apps Script returned ${fetchRes.status}, serving stale cache`);
+        res.setHeader('X-Cache', 'STALE');
+        return res.status(200).json(responseCache.data);
+      }
+      return res.status(502).json({
+        ok: false, error: `Apps Script returned HTTP ${fetchRes.status}`,
+        fetchedAt: new Date().toISOString(), today
+      });
     }
+
     const raw = await fetchRes.json();
 
     // Parse catalogs from DanhmucSP sheets
@@ -409,6 +433,15 @@ export default async function handler(req, res) {
     res.setHeader('X-Cache', 'MISS-FETCHED');
     return res.status(200).json(body);
   } catch (err) {
-    return res.status(502).json({ ok: false, error: String(err?.message || err), fetchedAt: new Date().toISOString(), today });
+    // Nếu có cache cũ (dù hết hạn) → trả cache thay vì báo lỗi
+    if (responseCache.data) {
+      console.warn('Apps Script fetch failed, serving stale cache:', err?.message || err);
+      res.setHeader('X-Cache', 'STALE-ERROR');
+      return res.status(200).json(responseCache.data);
+    }
+    return res.status(502).json({
+      ok: false, error: String(err?.message || err),
+      fetchedAt: new Date().toISOString(), today
+    });
   }
 }
