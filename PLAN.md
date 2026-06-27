@@ -585,7 +585,9 @@ function showRoleInfo() {
 | Hạng mục | Trạng thái | Ghi chú |
 |----------|-----------|---------|
 | Trang login (TVV / Đại sứ) | ✅ | Cùng index.html, chọn role khi login |
-| API Google Apps Script → Vercel | ✅ | Cache 5ph memory + 24h CDN |
+| **Đại sứ: vào thẳng không cần đăng nhập** | ✅ | Ẩn user/pass, chỉ nút Đăng nhập |
+| **Giữ session khi F5** | ✅ | sessionStorage, không mất login |
+| API Google Apps Script → Vercel | ✅ | Cache 2 phút memory + CDN |
 | **Banner theo từng tab** | ✅ | Mỗi tab banner riêng, compact |
 | Tra cứu ưu đãi (Topuni/Topclass/Gia sư) | ✅ | Search + filter |
 | Công cụ tính học phí | ✅ | 3 tabs |
@@ -597,13 +599,15 @@ function showRoleInfo() {
 | **Phân loại VIP mọi kỳ thi** | ✅ | |
 | Logic Topclass | ✅ | |
 | Logic Gia sư | ✅ | |
-| Nút xoá từng dòng | ✅ | |
+| Nút xoá từng dòng | ✅ | Event listener trực tiếp |
 | Copy mã ưu đãi | ✅ | |
 | Căn giữa cột Buổi Gia sư | ✅ | |
 | **Gia sư DS: chỉ cột Mọi KH + mã cart** | ✅ | Bỏ KH mới/KH cũ/upgrade |
 | **Gia sư TVV: thêm cột Mọi KH** | ✅ | Mã cart cho mọi KH |
 | **Calculator DS: ẩn chọn KH, mặc định KH mới** | ✅ | |
 | **Calculator Gia sư DS: dùng mã cart** | ✅ | |
+| **Tối ưu giao diện bảng ưu đãi desktop** | ✅ | Compact, responsive |
+| **Căn giữa text ô ưu đãi** | ✅ | |
 | Deploy Vercel tự động | ✅ | |
 
 ### GHI CHÚ QUAN TRỌNG
