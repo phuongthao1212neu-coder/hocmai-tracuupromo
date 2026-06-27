@@ -1134,6 +1134,7 @@
     html += '</tr></thead><tbody>';
 
     var totalOrig = 0, totalFinal = 0, totalSave = 0;
+    var catalog = (APP_DATA.catalogs || {})[cat] || [];
 
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
@@ -1141,7 +1142,15 @@
       totalFinal += r.finalPrice;
       totalSave += r.savings;
 
-      html += '<tr class="' + (r.isGolden ? 'golden-row' : '') + (r.isCombo ? ' combo-row' : '') + '">';
+      // Compute catalog indices for this row's items
+      var itemIdxs = [];
+      for (var j = 0; j < r.items.length; j++) {
+        var catIdx = catalog.indexOf(r.items[j]);
+        if (catIdx >= 0) itemIdxs.push(catIdx);
+      }
+      var idxsAttr = itemIdxs.join(',');
+
+      html += '<tr class="' + (r.isGolden ? 'golden-row' : '') + (r.isCombo ? ' combo-row' : '') + '" data-idxs="' + idxsAttr + '">';
       html += '<td style="text-align:left;font-weight:600">';
       if (r.isCombo) html += '<span class="combo-tag">COMBO</span> ';
       html += r.name + '</td>';
@@ -1157,7 +1166,7 @@
         html += '—';
       }
       html += '</td>';
-      html += '<td><button class="btn-remove-row" title="Bỏ chọn" onclick="window.removeCalcRow(\'' + cat + '\',' + i + ',\'' + (r.isCombo ? 'combo' : 'single') + '\')">✕</button></td>';
+      html += '<td><button class="btn-remove-row" title="Bỏ chọn" onclick="window.removeCalcRow(\'' + cat + '\',' + i + ')">✕</button></td>';
       html += '</tr>';
     }
 
@@ -1178,55 +1187,36 @@
     }
   }
 
-  // ─── REMOVE INDIVIDUAL CALC ROW ─────────────────────────────────────
-  function removeCalcRow(cat, rowIdx, type) {
+// ─── REMOVE INDIVIDUAL CALC ROW ─────────────────────────────────────
+  function removeCalcRow(cat, rowIdx) {
     var containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
     var container = $('#' + containerId);
     if (!container) return;
 
     var tableRows = container.querySelectorAll('.result-table tbody tr');
-    if (!tableRows[rowIdx]) return;
+    var row = tableRows[rowIdx];
+    if (!row) return;
 
-    var nameCell = tableRows[rowIdx].querySelector('td');
-    if (!nameCell) return;
-    var productName = nameCell.textContent.trim();
-    var isCombo = productName.indexOf('COMBO') >= 0;
+    // Đọc data-idxs từ attribute của dòng (VD: "5,8")
+    var idxsAttr = row.getAttribute('data-idxs') || '';
+    var idxs = idxsAttr.split(',').filter(function(s) { return s !== ''; });
 
-    // Duyệt qua TẤT CẢ checkbox trong panel, so sánh tên catalog item
-    var allCheckboxes = Array.from($$('#calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1) + ' input[type="checkbox"]'));
-    var catalog = (APP_DATA.catalogs || {})[cat] || [];
+    var panelId = 'calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1);
 
-    for (var c = 0; c < allCheckboxes.length; c++) {
-      var cb = allCheckboxes[c];
-      if (!cb.checked) continue;
-      var idx = parseInt(cb.dataset.idx, 10);
-      var item = catalog[idx];
-      if (!item) continue;
-      var itemName = (item.name || item.packageName || '').trim();
-      if (!itemName) continue;
-
-      if (isCombo) {
-        // Combo: tên item nằm trong tên combo
-        if (productName.indexOf(itemName) >= 0) {
-          cb.checked = false;
-          var li = cb.closest('.product-item');
-          if (li) li.classList.remove('selected');
-          cb.dispatchEvent(new Event('change'));
-        }
-      } else {
-        // Single: so sánh tên trực tiếp
-        if (productName === itemName || productName.indexOf(itemName) >= 0 || itemName.indexOf(productName) >= 0) {
-          cb.checked = false;
-          var li = cb.closest('.product-item');
-          if (li) li.classList.remove('selected');
-          cb.dispatchEvent(new Event('change'));
-          break;
-        }
+    // Uncheck từng checkbox tương ứng
+    for (var j = 0; j < idxs.length; j++) {
+      var selector = '#' + panelId + ' input[data-idx="' + idxs[j] + '"]';
+      var cb = $(selector);
+      if (cb) {
+        cb.checked = false;
+        var li = cb.closest('.product-item');
+        if (li) li.classList.remove('selected');
+        cb.dispatchEvent(new Event('change'));
       }
     }
 
     // Xóa dòng khỏi bảng kết quả
-    tableRows[rowIdx].remove();
+    row.remove();
 
     // Nếu không còn dòng nào -> hiện empty state
     var remainingRows = container.querySelectorAll('.result-table tbody tr');
