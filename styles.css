@@ -193,7 +193,7 @@ body {
 }
 .promo-table {
   width:100%; border-collapse:separate; border-spacing:0;
-  font-size:13px; min-width:1100px;
+  font-size:13px; min-width:1400px;
   table-layout: fixed;
 }
 .promo-table thead th {
@@ -216,7 +216,7 @@ body {
   background:var(--hm-navy) !important;
   min-width:140px; text-align:center !important;
 }
-.th-fixed:first-child { text-align:left; padding-left:18px; }
+.th-fixed.topuni-first { text-align:left !important; padding-left:18px; }
 .th-normal {
   background:linear-gradient(180deg,#3B82F6 0%,#2563EB 100%) !important;
 }
@@ -235,11 +235,24 @@ body {
   position:sticky; left:0; z-index:1;
   background:#fff;
 }
-.promo-table tbody td:first-child { z-index:2; min-width:180px; }
-.promo-table tbody td:nth-child(2) { min-width:200px; }
+.promo-table tbody td:first-child { z-index:2; text-align:left !important; min-width:180px; }
+.promo-table tbody td:nth-child(2) { text-align:left !important; min-width:200px; }
 .promo-table tbody td:nth-child(3) { min-width:100px; }
 .promo-table tbody td:nth-child(4) { min-width:120px; }
 .promo-table tbody td:nth-child(5) { min-width:100px; }
+
+/* Topuni: widen columns for long product text */
+#tableWrapTopuni .promo-table tbody td:first-child { min-width:240px; }
+#tableWrapTopuni .promo-table tbody td:nth-child(2) { min-width:300px; }
+#tableWrapTopuni .promo-table tbody td:nth-child(3) { min-width:120px; }
+
+/* Topclass: wider promo cells for code+fee display */
+#tableWrapTopclass .promo-table tbody td:first-child { min-width:120px; }
+#tableWrapTopclass .promo-table tbody td:nth-child(2) { min-width:120px; }
+#tableWrapTopclass .promo-table tbody td:nth-child(3) { min-width:100px; }
+#tableWrapTopclass .promo-table tbody td:nth-child(4) { min-width:150px; }
+#tableWrapTopclass .promo-table tbody td:nth-child(5) { min-width:130px; }
+#tableWrapTopclass .promo-cell { min-width:220px; max-width:280px; }
 
 .promo-table tbody td {
   padding:12px 14px; text-align:center;
@@ -256,31 +269,34 @@ body {
 .promo-table tbody tr:hover td:nth-child(5) { background:#F1F5F9; }
 
 /* ═══════ PROMO CARD ═══════ */
-.promo-cell { min-width:170px; }
+.promo-cell { min-width:200px; max-width:250px; }
 .promo-cell.empty-cell { color:var(--hm-muted); font-size:16px; }
 .tu-card {
-  display:flex; flex-direction:column; gap:5px;
-  padding:10px 12px; background:#F8FAFC;
+  display:flex; flex-direction:column; gap:4px;
+  padding:8px 10px; background:#F8FAFC;
   border-radius:10px; border:1px solid #E8EEF6;
-  transition:.15s;
+  transition:.15s; overflow:hidden;
 }
 .tu-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.tu-discount { font-size:13px; font-weight:700; color:#0F172A; }
-.tu-price-normal { font-size:13px; font-weight:700; color:var(--hm-green); }
-.tu-price-golden { font-size:13px; font-weight:700; color:var(--hm-orange-dark); }
+.tu-discount { font-size:12px; font-weight:700; color:#0F172A; }
+.tu-price-normal { font-size:12px; font-weight:700; color:var(--hm-green); }
+.tu-price-golden { font-size:12px; font-weight:700; color:var(--hm-orange-dark); }
 .tu-code-row {
-  display:flex; align-items:center; gap:6px; margin-top:2px;
+  display:flex; align-items:center; gap:4px; margin-top:2px;
+  min-width:0;
 }
 .tu-code-badge {
-  font-size:11px; font-weight:700; padding:3px 8px;
+  font-size:10px; font-weight:700; padding:2px 6px;
   background:#EFF6FF; color:var(--hm-blue-dark);
-  border-radius:6px; border:1px solid #BFDBFE;
+  border-radius:5px; border:1px solid #BFDBFE;
+  max-width:120px; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; display:inline-block;
 }
 .copy-icon {
   display:inline-flex; align-items:center; justify-content:center;
-  width:22px; height:22px; border:1px solid #D1D5DB;
-  border-radius:5px; background:transparent;
-  cursor:pointer; font-size:12px; line-height:1;
+  width:20px; height:20px; border:1px solid #D1D5DB;
+  border-radius:4px; background:transparent;
+  cursor:pointer; font-size:11px; line-height:1;
   transition:.15s; flex-shrink:0;
 }
 .copy-icon:hover { border-color:var(--hm-blue); background:var(--hm-blue-soft); }
