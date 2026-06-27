@@ -771,3 +771,6 @@ body {
   .login-card { padding:32px 24px; }
   .login-title { font-size:20px; }
 }
+
+/* ─── ĐẠI SỨ: ẩn chọn loại KH ─── */
+body.role-ds .cust-type-selector { display:none; }

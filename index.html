@@ -451,7 +451,7 @@
     return ctype || '—';
   }
 
-  function renderPromoCell(data, codeField, codeLabel, pType) {
+  function renderPromoCell(data, codeField, codeLabel, pType, ctype) {
     if (!data || (data.discount == null && !data[codeField] && data.finalPrice == null)) {
       return '<td class="promo-cell empty-cell">—</td>';
     }
@@ -475,11 +475,12 @@
       priceHtml = `<div class="${cls}">HP: ${formatPrice(data.finalPrice)}</div>`;
     }
 
-    const code = data[codeField];
+    const code = (ctype === 'all') ? (data.code || data.amsCode) : data[codeField];
     if (code) {
+      const badge = (ctype === 'all') ? 'Cart' : code;
       codeHtml = `
         <div class="tu-code-row">
-          <span class="tu-code-badge">${code}</span>
+          <span class="tu-code-badge">${badge}</span>
           <button class="copy-icon" title="Sao chép" onclick="copyText('${code}', this)">📋</button>
         </div>`;
     }
@@ -524,8 +525,14 @@
       const custs = p.custs || [];
       for (const c of custs) {
         const ctype = c.type || 'unknown';
+        // DS role: Gia sư bỏ upgrade, thêm 'all' (Cart)
+        if (ROLE === 'ds' && cat === 'giasu' && ctype === 'upgrade') continue;
         const ctypeLabel = getCustLabel(ctype);
         periodColumns.push({ period: p, cust: c, pType, ctype, ctypeLabel });
+      }
+      // DS role: Gia sư thêm cột Cart (all KH)
+      if (ROLE === 'ds' && cat === 'giasu') {
+        periodColumns.push({ period: p, cust: { type: 'all' }, pType, ctype: 'all', ctypeLabel: 'Cart' });
       }
     }
 
@@ -540,7 +547,12 @@
     }
     for (const p of periods) {
       const pType = p.type || 'unknown';
-      const custCount = (p.custs || []).length || 1;
+      let custCount = (p.custs || []).length || 1;
+      // DS role Gia sư: +1 cho cột Cart, -1 nếu có upgrade
+      if (ROLE === 'ds' && cat === 'giasu') {
+        const hasUpgrade = (p.custs || []).some(c => c.type === 'upgrade');
+        custCount = custCount + 1 - (hasUpgrade ? 1 : 0);
+      }
       html += `<th class="${pType === 'golden' ? 'th-golden' : 'th-normal'}" colspan="${custCount}">${cleanPeriodName(p.name)}</th>`;
     }
     html += '</tr>';
@@ -569,7 +581,7 @@
         const promos = item.promotions || {};
         const periodPromo = promos[pName] || {};
         const custPromo = periodPromo[ctype] || {};
-        html += renderPromoCell(custPromo, codeField, codeLabel, pc.pType);
+        html += renderPromoCell(custPromo, codeField, codeLabel, pc.pType, ctype);
       }
       html += '</tr>';
     }
@@ -704,6 +716,8 @@
   // ─── CALCULATOR CORE ──────────────────────────────────────────────────
 
   function getSelectedCustType(cat) {
+    // DS role: mặc định KH mới, không cần chọn
+    if (ROLE === 'ds') return 'new';
     const prefix = cat.charAt(0).toUpperCase() + cat.slice(1);
     const radios = $$('#custType' + prefix + ' input[type="radio"]:checked');
     return radios.length > 0 ? radios[0].value : null;
