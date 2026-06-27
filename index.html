@@ -807,9 +807,11 @@
       var name = (item.name || '').toLowerCase();
       if (name.indexOf('nền tảng') >= 0) {
         nenTangItems.push(item);
-      } else if (name.indexOf('toàn diện vip') >= 0 && name.indexOf('tn thpt') >= 0) {
+      } else if (name.indexOf('toàn diện vip') >= 0) {
+        // VIP có thể là TN THPT, HSA, TSA, QDA, V-ACT → không giới hạn kỳ thi
         toanDienVipItems.push(item);
-      } else if (name.indexOf('tiêu chuẩn vip') >= 0 && name.indexOf('tn thpt') >= 0) {
+      } else if (name.indexOf('tiêu chuẩn vip') >= 0) {
+        // VIP có thể là TN THPT, HSA, TSA, QDA, V-ACT → không giới hạn kỳ thi
         tieuChuanVipItems.push(item);
       } else if (name.indexOf('luyện đề') >= 0 && name.indexOf('tn thpt') >= 0) {
         luyenDeTnItems.push(item);
