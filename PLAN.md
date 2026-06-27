@@ -578,45 +578,43 @@ function showRoleInfo() {
 
 ---
 
-## 15. 📊 TIẾN ĐỘ THỰC TẾ (Cập nhật: 27/06/2026 — cuối ngày)
+## 15. 📊 TIẾN ĐỘ THỰC TẾ (Cập nhật: 28/06/2026)
 
 ### ĐÃ HOÀN THÀNH ✅
 
 | Hạng mục | Trạng thái | Ghi chú |
 |----------|-----------|---------|
-| Trang login (TVV / Đại sứ) | ✅ | tvv/tvv@123, ds/adc |
+| Trang login (TVV / Đại sứ) | ✅ | Cùng index.html, chọn role khi login |
 | API Google Apps Script → Vercel | ✅ | Cache 5ph memory + 24h CDN |
-| **Banner theo từng tab** | ✅ | Mỗi tab banner riêng, compact, chỉ hiện khi có KM |
+| **Banner theo từng tab** | ✅ | Mỗi tab banner riêng, compact |
 | Tra cứu ưu đãi (Topuni/Topclass/Gia sư) | ✅ | Search + filter |
-| Công cụ tính học phí | ✅ | 3 tabs (Topuni/Topclass/Gia sư) |
-| Chọn loại KH (mới/cũ) | ✅ | Bắt buộc trước khi tính |
+| Công cụ tính học phí | ✅ | 3 tabs |
+| Chọn loại KH (mới/cũ) | ✅ | TVV bắt buộc, DS tự động KH mới |
 | Ưu tiên Ngày vàng > Ngày thường | ✅ | |
-| **Logic Topuni combo Nền tảng** | ✅ | N khóa → M môn max (M≤N) → discount cho TẤT CẢ N |
-| **Logic Topuni combo VIP 2 kỳ thi** | ✅ | 1 TD VIP + 1 TC VIP → 39-40% |
-| **Logic Topuni combo VIP+Luyện đề** | ✅ | 1 TD VIP + 1 Luyện đề TN → 42% |
-| **Phân loại VIP mọi kỳ thi** | ✅ | TN THPT, HSA, TSA, QDA, V-ACT |
-| Logic Topclass | ✅ | Group productType + feePackage + quantity |
-| Logic Gia sư | ✅ | Tính riêng lẻ |
-| Nút xoá từng dòng kết quả | ✅ | Event listener trực tiếp |
+| **Logic Topuni combo Nền tảng** | ✅ | N khóa → M môn max |
+| **Logic Topuni combo VIP 2 kỳ thi** | ✅ | |
+| **Logic Topuni combo VIP+Luyện đề** | ✅ | |
+| **Phân loại VIP mọi kỳ thi** | ✅ | |
+| Logic Topclass | ✅ | |
+| Logic Gia sư | ✅ | |
+| Nút xoá từng dòng | ✅ | |
 | Copy mã ưu đãi | ✅ | |
-| **Căn giữa cột Số buổi/Buổi Gia sư** | ✅ | Cả TVV + ADC |
-| Deploy Vercel tự động | ✅ | vercel --prod --yes |
+| Căn giữa cột Buổi Gia sư | ✅ | |
+| **Gia sư DS: chỉ cột Mọi KH + mã cart** | ✅ | Bỏ KH mới/KH cũ/upgrade |
+| **Gia sư TVV: thêm cột Mọi KH** | ✅ | Mã cart cho mọi KH |
+| **Calculator DS: ẩn chọn KH, mặc định KH mới** | ✅ | |
+| **Calculator Gia sư DS: dùng mã cart** | ✅ | |
+| Deploy Vercel tự động | ✅ | |
 
-### ĐÃ SYNC SANG ADC ✅
+### GHI CHÚ QUAN TRỌNG
 
-| Hạng mục | Trạng thái |
-|----------|-----------|
-| Banner theo tab | ✅ |
-| Căn giữa cột Buổi Gia sư | ✅ |
-| CSS tab-banner mới | ✅ |
-| **Chưa sync: Calculator + Combo logic** | ❌ (ADC chưa có tính năng tính học phí) |
+- **ADC/Đại sứ KHÔNG phải trang riêng** — dùng chung index.html, chọn role khi login
+- `ADC.html` là file cũ, không còn sử dụng
 
 ### CẦN LÀM 📋
 
 | Hạng mục | Ưu tiên |
 |----------|---------|
-| Thêm Calculator + Combo logic cho ADC | 🔴 Cao |
-| Giao diện đặc thù Đại sứ (branding riêng) | 🟡 TB |
 | Tối ưu mobile responsive | 🟢 Thấp |
 
 ### LOGIC TOPUNI — TỔNG KẾT
@@ -628,13 +626,18 @@ Combo (thứ tự ưu tiên):
 1. Nền tảng: N khóa → M môn max (M≤N) → discount cho TẤT CẢ N
 2. VIP+Luyện đề: 1 TD VIP + 1 Luyện đề TN
 3. VIP 2 kỳ thi: 1 TD VIP + 1 TC VIP
-Sản phẩm dư → tính riêng lẻ
 ```
+
+### PHÂN BIỆT TVV vs ĐẠI SỨ
+
+| | TVV | Đại sứ |
+|--|-----|--------|
+| **Mã hiển thị** | Mã Cart (`code`) | Mã AMS (`amsCode`) |
+| **Gia sư lookup** | KH mới + KH cũ + Mọi KH | Chỉ Mọi KH (mã cart) |
+| **Calculator** | Chọn KH mới/cũ | Mặc định KH mới, ẩn selector |
+| **Gia sư calc code** | `code` field | `code` field (cart) |
 
 ### LINK
 
-- **TVV:** https://hocmai-tracuupromo.vercel.app/
-- **ADC:** https://hocmai-tracuupromo.vercel.app/ADC
+- **Production:** https://hocmai-tracuupromo.vercel.app/
 - **GitHub:** phuongthao1212neu-coder/hocmai-tracuupromo
-
-*Plan này là bản nháp. Sau khi chị review và trả lời các câu hỏi ở mục 12, mình sẽ điều chỉnh và bắt tay vào làm.*
