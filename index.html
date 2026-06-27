@@ -1116,7 +1116,7 @@
     renderCalcResult(cat, rows, codeLabel, custType, periodType);
   }
 
-  // ─── RENDER CALC RESULT ─────────────────────────────────────────────
+// ─── RENDER CALC RESULT ─────────────────────────────────────────────
   function renderCalcResult(cat, rows, codeLabel, custType, periodType) {
     var containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
     var container = $('#' + containerId);
@@ -1152,13 +1152,12 @@
       html += '<td>';
       if (r.code !== '—') {
         html += '<span class="tu-code-badge">' + r.code + '</span> ';
-        html += '<button class="copy-icon" title="Sao chép" onclick="copyText(\'' + r.code.replace(/'/g, "\\'") + '\', this)">📋</button>';
+        html += '<button class="copy-icon" title="Sao chép" onclick="copyText(\'' + r.code.replace(/\'/g, "\\'") + '\', this)">📋</button>';
       } else {
         html += '—';
       }
       html += '</td>';
-      // Delete button per row — unchecks the first item's checkbox
-      html += '<td><button class="btn-remove-row" title="Bỏ chọn" onclick="removeCalcRow(\'' + cat + '\',' + (i) + ',\'' + (r.isCombo ? 'combo' : 'single') + '\')">✕</button></td>';
+      html += '<td><button class="btn-remove-row" title="Bỏ chọn" onclick="window.removeCalcRow(\'' + cat + '\',' + i + ',\'' + (r.isCombo ? 'combo' : 'single') + '\')">✕</button></td>';
       html += '</tr>';
     }
 
@@ -1172,6 +1171,11 @@
     html += '</div>';
 
     container.innerHTML = html;
+
+    // Thêm global function reference for on click handlers
+    if (!window.removeCalcRow) {
+      window.removeCalcRow = removeCalcRow;
+    }
   }
 
   // ─── REMOVE INDIVIDUAL CALC ROW ─────────────────────────────────────
