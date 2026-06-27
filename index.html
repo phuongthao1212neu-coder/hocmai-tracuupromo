@@ -477,10 +477,9 @@
 
     const code = (ctype === 'all') ? (data.code || data.amsCode) : data[codeField];
     if (code) {
-      const badge = (ctype === 'all') ? 'Cart' : code;
       codeHtml = `
         <div class="tu-code-row">
-          <span class="tu-code-badge">${badge}</span>
+          <span class="tu-code-badge">${code}</span>
           <button class="copy-icon" title="Sao chép" onclick="copyText('${code}', this)">📋</button>
         </div>`;
     }
