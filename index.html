@@ -533,8 +533,10 @@
 
     // Row 1: fixed cols + period headers
     html += '<tr>';
-    for (const fh of fixedHeaders) {
-      html += `<th class="th-fixed" rowspan="2">${fh}</th>`;
+    for (let ci = 0; ci < fixedHeaders.length; ci++) {
+      const fh = fixedHeaders[ci];
+      const align = (cat === 'giasu' && ci === 1) ? ' style="text-align:center"' : '';
+      html += '<th class="th-fixed" rowspan="2"' + align + '>' + fh + '</th>';
     }
     for (const p of periods) {
       const pType = p.type || 'unknown';
@@ -556,8 +558,10 @@
       const item = filteredItems[i];
       const fixedCols = getFixedCols(cat, item, i);
       html += '<tr>';
-      for (const fc of fixedCols) {
-        html += `<td>${fc}</td>`;
+      for (let ci = 0; ci < fixedCols.length; ci++) {
+        const fc = fixedCols[ci];
+        const align = (cat === 'giasu' && ci === 1) ? ' style="text-align:center"' : '';
+        html += '<td' + align + '>' + fc + '</td>';
       }
       for (const pc of periodColumns) {
         const pName = pc.period.name;
