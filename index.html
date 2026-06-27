@@ -535,7 +535,7 @@
     html += '<tr>';
     for (let ci = 0; ci < fixedHeaders.length; ci++) {
       const fh = fixedHeaders[ci];
-      const align = (cat === 'giasu' && ci === 1) ? ' style="text-align:center"' : '';
+      const align = (cat === 'giasu' && ci === 1) ? ' style="text-align:center!important"' : '';
       html += '<th class="th-fixed" rowspan="2"' + align + '>' + fh + '</th>';
     }
     for (const p of periods) {
@@ -560,7 +560,7 @@
       html += '<tr>';
       for (let ci = 0; ci < fixedCols.length; ci++) {
         const fc = fixedCols[ci];
-        const align = (cat === 'giasu' && ci === 1) ? ' style="text-align:center"' : '';
+        const align = (cat === 'giasu' && ci === 1) ? ' style="text-align:center!important"' : '';
         html += '<td' + align + '>' + fc + '</td>';
       }
       for (const pc of periodColumns) {

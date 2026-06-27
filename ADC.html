@@ -39,15 +39,14 @@
     .th-normal {
       background: linear-gradient(180deg, #8B5CF6 0%, #7C3AED 100%) !important;
     }
-    .day-banner.normal .b-icon { background: #EDE9FE !important; }
+    .copy-icon:hover {
+      border-color: var(--hm-primary) !important;
+      background: var(--hm-primary-soft) !important;
+    }
     .tu-code-badge {
       background: #F5F3FF !important;
       color: #6D28D9 !important;
       border-color: #DDD6FE !important;
-    }
-    .copy-icon:hover {
-      border-color: var(--hm-primary) !important;
-      background: var(--hm-primary-soft) !important;
     }
     .product-item.selected { background: #F5F3FF !important; }
     .product-item input[type="checkbox"] { accent-color: var(--hm-primary) !important; }
@@ -105,24 +104,6 @@
 
   <!-- MAIN LAYOUT -->
   <div class="app-layout">
-    <!-- BANNER -->
-    <div class="banner-group">
-      <div id="dayBannerGolden" class="day-banner golden">
-        <span class="b-icon">🌟</span>
-        <div class="b-text">
-          <strong>🌟 Ngày Vàng đang diễn ra!</strong>
-          <span>Áp dụng ưu đãi đặc biệt — nhấn copy mã AMS để gửi cho khách hàng</span>
-        </div>
-      </div>
-      <div id="dayBannerNormal" class="day-banner normal">
-        <span class="b-icon">📅</span>
-        <div class="b-text">
-          <strong>Chương trình ưu đãi Ngày Thường</strong>
-          <span>Các ưu đãi đang hiệu lực cho hôm nay</span>
-        </div>
-      </div>
-    </div>
-
     <!-- TABS: Main -->
     <div class="app-topbar">
       <button class="tab-btn active" data-tab="tra-cuu" onclick="switchTab(this)">
@@ -150,6 +131,7 @@
 
       <!-- Bảng Topuni -->
       <div id="catTopuni" class="cat-panel active">
+        <div class="tab-banner" id="bannerTopuni"></div>
         <div class="table-wrapper">
           <table id="tableTopuni" class="promo-table">
             <thead id="theadTopuni"></thead>
@@ -160,6 +142,7 @@
 
       <!-- Bảng Topclass -->
       <div id="catTopclass" class="cat-panel">
+        <div class="tab-banner" id="bannerTopclass"></div>
         <div class="table-wrapper">
           <table id="tableTopclass" class="promo-table">
             <thead id="theadTopclass"></thead>
@@ -170,6 +153,7 @@
 
       <!-- Bảng Gia sư -->
       <div id="catGiasu" class="cat-panel">
+        <div class="tab-banner" id="bannerGiasu"></div>
         <div class="table-wrapper">
           <table id="tableGiasu" class="promo-table">
             <thead id="theadGiasu"></thead>
@@ -283,7 +267,7 @@ async function loadData() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     allData = await resp.json();
     if (allData.status !== 'ok') throw new Error(allData.error || 'API error');
-    renderBanners();
+    renderTabBanner('topuni');
     renderAllTables();
     renderCalcProducts('topuni');
   } catch (err) {
@@ -352,27 +336,39 @@ function formatDiscount(v) {
   return String(v);
 }
 
-// ---------- BANNERS ----------
-function renderBanners() {
-  const golden = document.getElementById('dayBannerGolden');
-  const normal = document.getElementById('dayBannerNormal');
-  golden.classList.remove('show');
-  normal.classList.remove('show');
+// ---------- RENDER TAB BANNER ----------
+function renderTabBanner(cat) {
+  var bannerId = 'banner' + cat.charAt(0).toUpperCase() + cat.slice(1);
+  var wrap = document.getElementById(bannerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (!allData) return;
 
-  if (!allData || !allData.promotions) return;
+  var promo = allData.promotions[cat];
+  if (!promo || !promo.activePeriods || promo.activePeriods.length === 0) return;
 
-  for (const key of ['topuni', 'topclass', 'giasu']) {
-    const promos = allData.promotions[key];
-    if (!promos || !promos.activePeriods) continue;
-    for (const pName of promos.activePeriods) {
-      const period = promos.periods.find(p => p.name === pName);
-      if (!period) continue;
-      if (period.type === 'golden') {
-        golden.classList.add('show');
-      } else {
-        normal.classList.add('show');
-      }
-    }
+  var bestPeriod = null, isGolden = false;
+  for (var i = 0; i < promo.activePeriods.length; i++) {
+    var pname = promo.activePeriods[i];
+    var period = (promo.periods || []).find(function(p) { return p.name === pname; });
+    if (!period) continue;
+    var golden = (period.type || '').indexOf('golden') >= 0 || pname.toLowerCase().indexOf('ngày vàng') >= 0;
+    if (golden) { bestPeriod = period; isGolden = true; break; }
+    if (!bestPeriod) { bestPeriod = period; isGolden = false; }
+  }
+  if (!bestPeriod) return;
+
+  var dateRange = bestPeriod.dateRange || '';
+  if (isGolden) {
+    wrap.innerHTML = '<div class="tab-banner-inner golden">'
+      + '<span class="tb-icon">🌟</span>'
+      + '<span class="tb-text"><strong>Ngày vàng</strong> ' + dateRange + '</span>'
+      + '</div>';
+  } else {
+    wrap.innerHTML = '<div class="tab-banner-inner normal">'
+      + '<span class="tb-icon">📅</span>'
+      + '<span class="tb-text"><strong>Khuyến học</strong> ' + dateRange + '</span>'
+      + '</div>';
   }
 }
 
@@ -412,7 +408,7 @@ function getFixedColumns(cat) {
   } else { // giasu
     return [
       { label: 'Tên gói', key: 'name', width: '200px' },
-      { label: 'Buổi', key: 'sessions', width: '70px' },
+      { label: 'Buổi', key: 'sessions', width: '70px', align: 'center' },
       { label: 'Giá/buổi', key: 'pricePerSession', width: '110px' },
       { label: 'Tổng HP gốc', key: 'totalListPrice', width: '140px' }
     ];
@@ -433,7 +429,8 @@ function renderTable(cat) {
   // Row 1: Period headers (merged)
   let htmlHeader1 = '<tr>';
   for (const fc of fixedCols) {
-    htmlHeader1 += `<th class="th-fixed" style="min-width:${fc.width}">${fc.label}</th>`;
+    const alignStyle = fc.align ? 'text-align:' + fc.align + '!important;' : '';
+    htmlHeader1 += '<th class="th-fixed" style="min-width:' + fc.width + ';' + alignStyle + '">' + fc.label + '</th>';
   }
   for (const p of periods) {
     const cls = p.type === 'golden' ? 'th-golden' : 'th-normal';
@@ -481,7 +478,8 @@ function renderTable(cat) {
       if (fc.key === 'listPrice' || fc.key === 'totalListPrice' || fc.key === 'pricePerSession') {
         val = formatPrice(val);
       }
-      htmlRows += `<td>${val || '—'}</td>`;
+      const alignStyle = fc.align ? ' style="text-align:' + fc.align + '!important"' : '';
+      htmlRows += '<td' + alignStyle + '>' + (val || '—') + '</td>';
     }
     // Promo columns
     for (const p of periods) {
@@ -544,6 +542,7 @@ function switchCat(btn) {
   activeCategory = btn.dataset.cat;
   document.querySelectorAll('.cat-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('cat' + capitalize(activeCategory)).classList.add('active');
+  renderTabBanner(activeCategory);
 }
 
 // ---------- SEARCH ----------
