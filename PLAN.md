@@ -578,7 +578,7 @@ function showRoleInfo() {
 
 ---
 
-## 15. 📊 TIẾN ĐỘ THỰC TẾ (Cập nhật: 27/06/2026)
+## 15. 📊 TIẾN ĐỘ THỰC TẾ (Cập nhật: 27/06/2026 — cuối ngày)
 
 ### ĐÃ HOÀN THÀNH ✅
 
@@ -586,53 +586,55 @@ function showRoleInfo() {
 |----------|-----------|---------|
 | Trang login (TVV / Đại sứ) | ✅ | tvv/tvv@123, ds/adc |
 | API Google Apps Script → Vercel | ✅ | Cache 5ph memory + 24h CDN |
-| Banner ngày vàng / ngày thường | ✅ | Tự động nhận diện |
+| **Banner theo từng tab** | ✅ | Mỗi tab banner riêng, compact, chỉ hiện khi có KM |
 | Tra cứu ưu đãi (Topuni/Topclass/Gia sư) | ✅ | Search + filter |
-| Công cụ tính học phí | ✅ | 3 tabs |
+| Công cụ tính học phí | ✅ | 3 tabs (Topuni/Topclass/Gia sư) |
 | Chọn loại KH (mới/cũ) | ✅ | Bắt buộc trước khi tính |
 | Ưu tiên Ngày vàng > Ngày thường | ✅ | |
-| **Logic Topuni combo Nền tảng** | ✅ | Chọn N khóa → M môn lớn nhất (M≤N) → áp discount cho TẤT CẢ N |
-| **Logic Topuni combo VIP 2 kỳ thi** | ✅ | 1 TD VIP + 1 TC VIP → combo discount 39-40% (KH mới/cũ) |
-| **Logic Topuni combo VIP+Luyện đề** | ✅ | 1 TD VIP + 1 Luyện đề TN → combo discount 42% |
-| **Phân loại VIP không giới hạn kỳ thi** | ✅ | TN THPT, HSA, TSA, QDA, V-ACT đều nhận diện đúng |
-| **Logic Topclass** | ✅ | Group theo productType + feePackage + quantity |
-| Logic Gia sư | ✅ | Tính riêng lẻ từng sản phẩm |
+| **Logic Topuni combo Nền tảng** | ✅ | N khóa → M môn max (M≤N) → discount cho TẤT CẢ N |
+| **Logic Topuni combo VIP 2 kỳ thi** | ✅ | 1 TD VIP + 1 TC VIP → 39-40% |
+| **Logic Topuni combo VIP+Luyện đề** | ✅ | 1 TD VIP + 1 Luyện đề TN → 42% |
+| **Phân loại VIP mọi kỳ thi** | ✅ | TN THPT, HSA, TSA, QDA, V-ACT |
+| Logic Topclass | ✅ | Group productType + feePackage + quantity |
+| Logic Gia sư | ✅ | Tính riêng lẻ |
 | Nút xoá từng dòng kết quả | ✅ | Event listener trực tiếp |
 | Copy mã ưu đãi | ✅ | |
+| **Căn giữa cột Số buổi/Buổi Gia sư** | ✅ | Cả TVV + ADC |
 | Deploy Vercel tự động | ✅ | vercel --prod --yes |
+
+### ĐÃ SYNC SANG ADC ✅
+
+| Hạng mục | Trạng thái |
+|----------|-----------|
+| Banner theo tab | ✅ |
+| Căn giữa cột Buổi Gia sư | ✅ |
+| CSS tab-banner mới | ✅ |
+| **Chưa sync: Calculator + Combo logic** | ❌ (ADC chưa có tính năng tính học phí) |
 
 ### CẦN LÀM 📋
 
 | Hạng mục | Ưu tiên |
 |----------|---------|
-| Trang riêng cho Đại sứ (/daisu) | Cao |
-| Giao diện đặc thù Đại sứ | Cao |
-| Kiểm tra tổng thể logic Topclass | Trung bình |
-| Tối ưu mobile responsive | Thấp |
+| Thêm Calculator + Combo logic cho ADC | 🔴 Cao |
+| Giao diện đặc thù Đại sứ (branding riêng) | 🟡 TB |
+| Tối ưu mobile responsive | 🟢 Thấp |
 
-### LOGIC TOPUNI — TỔNG KẾT (27/06)
+### LOGIC TOPUNI — TỔNG KẾT
 
 ```
-Phân loại sản phẩm:
-├── Nền tảng            → "nền tảng"
-├── Toàn diện VIP       → "toàn diện vip" (mọi kỳ thi)
-├── Tiêu chuẩn VIP      → "tiêu chuẩn vip" (mọi kỳ thi)
-├── Luyện đề TN         → "luyện đề" + "tn thpt"
-├── Toàn diện TN        → "toàn diện" + "tn thpt"
-├── Tiêu chuẩn TN       → "tiêu chuẩn" + "tn thpt"
-└── Khác                → tính riêng lẻ
+Phân loại: Nền tảng | Toàn diện VIP | Tiêu chuẩn VIP | Luyện đề TN | Toàn diện TN | Tiêu chuẩn TN
 
-Combo (xử lý theo thứ tự):
+Combo (thứ tự ưu tiên):
 1. Nền tảng: N khóa → M môn max (M≤N) → discount cho TẤT CẢ N
-2. VIP+Luyện đề: 1 TD VIP + 1 Luyện đề TN → 42% (KH cũ)
-3. VIP 2 kỳ thi: 1 TD VIP + 1 TC VIP → 40% (KH cũ)
-Sản phẩm dư sau combo → tính riêng lẻ
+2. VIP+Luyện đề: 1 TD VIP + 1 Luyện đề TN
+3. VIP 2 kỳ thi: 1 TD VIP + 1 TC VIP
+Sản phẩm dư → tính riêng lẻ
 ```
 
-### LINK DEPLOY
+### LINK
 
-- **Production:** https://hocmai-tracuupromo.vercel.app/
+- **TVV:** https://hocmai-tracuupromo.vercel.app/
+- **ADC:** https://hocmai-tracuupromo.vercel.app/ADC
 - **GitHub:** phuongthao1212neu-coder/hocmai-tracuupromo
-- **Apps Script:** `AKfycby4kur0pR41dc5x4TL1vUSk4EfXfU2GWvBJIvaAnswF39cwol6TjmrhGGITryOTRokH`
 
 *Plan này là bản nháp. Sau khi chị review và trả lời các câu hỏi ở mục 12, mình sẽ điều chỉnh và bắt tay vào làm.*
