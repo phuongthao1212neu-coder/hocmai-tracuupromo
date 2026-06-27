@@ -719,250 +719,518 @@
     btn.disabled = !custType || selected.length === 0;
   }
 
-  // ─── COMBO DETECTION (Topuni) ────────────────────────────────────
-  function detectTopuniCombo(selected) {
-    // Check if selected items contain a "toàn diện VIP" + "tiêu chuẩn VIP" pair
-    // with the same exam suffix (everything after "VIP" before " - Năm học")
-    const vipItems = { toanDien: [], tieuChuan: [] };
-    for (const item of selected) {
-      const name = item.name || '';
-      if (name.includes('toàn diện VIP')) {
-        vipItems.toanDien.push(item);
-      } else if (name.includes('tiêu chuẩn VIP')) {
-        vipItems.tieuChuan.push(item);
-      }
-    }
-    // Find matching pairs by comparing the exam suffix after "VIP"
-    const pairs = [];
-    for (const td of vipItems.toanDien) {
-      // Extract suffix after "VIP" and before " - Năm học"
-      const tdSuffix = (td.name || '').split('VIP')[1]?.split(' - Năm')[0]?.trim() || '';
-      for (const tc of vipItems.tieuChuan) {
-        const tcSuffix = (tc.name || '').split('VIP')[1]?.split(' - Năm')[0]?.trim() || '';
-        if (tdSuffix && tdSuffix === tcSuffix) {
-          pairs.push({ toanDien: td, tieuChuan: tc, suffix: tdSuffix });
-        }
-      }
-    }
-    return pairs;
-  }
+  // ─── CALCULATOR CORE ──────────────────────────────────────────────────
 
   function getSelectedCustType(cat) {
-    const selector = $('#custType' + cat.charAt(0).toUpperCase() + cat.slice(1));
-    if (!selector) return null;
-    const checked = selector.querySelector('input[type="radio"]:checked');
-    return checked ? checked.value : null;
+    const prefix = cat.charAt(0).toUpperCase() + cat.slice(1);
+    const radios = $$('#custType' + prefix + ' input[type="radio"]:checked');
+    return radios.length > 0 ? radios[0].value : null;
   }
 
   function getActivePeriodType(cat) {
     const promo = (APP_DATA.promotions || {})[cat] || {};
-    const activeNames = promo.activePeriods || [];
-    // Check if any active period is golden
-    const hasGolden = activeNames.some(n => n.toLowerCase().includes('ngày vàng'));
+    const active = promo.activePeriods || [];
+    // Check if any active period name contains "ngày vàng"
+    const hasGolden = active.some(function(name) {
+      return name.toLowerCase().indexOf('ngày vàng') >= 0 || name.toLowerCase().indexOf('vàng') >= 0;
+    });
     if (hasGolden) return 'golden';
-    if (activeNames.length > 0) return 'normal';
+    if (active.length > 0) return 'normal';
     return 'none';
   }
 
-  function findPromoForProduct(item, activePeriods, custType) {
-    const promos = item.promotions || {};
-    // Determine which custType key to look for
-    // Map user-facing 'new'/'old' to promo keys: new, old, all, upgrade
-    const targetKeys = custType === 'new' ? ['new', 'all', 'upgrade'] : ['old', 'all', 'upgrade'];
-
-    for (const pname of activePeriods) {
-      const periodPromo = promos[pname] || {};
-      for (const tkey of targetKeys) {
-        if (periodPromo[tkey]) {
-          return { ...periodPromo[tkey], periodName: pname, custType: tkey };
-        }
-      }
-    }
+  function getDiscountRate(periodPromo, custType) {
+    // periodPromo is like {new:{discount:0.3,code:'...'}, old:{discount:0.2,code:'...'}}
+    if (!periodPromo) return null;
+    // Try matching custType first, then 'all' as fallback
+    if (periodPromo[custType]) return periodPromo[custType];
+    if (periodPromo.all) return periodPromo.all;
     return null;
   }
 
-  function calculateFee(cat) {
-    const custType = getSelectedCustType(cat);
-    if (!custType) {
-      // No customer type selected — focus the first radio and show a brief reminder
-      const selId = 'custType' + cat.charAt(0).toUpperCase() + cat.slice(1);
-      const firstRadio = $('#' + selId + ' input[type="radio"]');
-      if (firstRadio) firstRadio.focus();
-      return;
+  function getBestPromoForItem(item, activePeriods, custType, codeField) {
+    // Returns {discount, periodName, code} or null
+    // Priority: golden day > normal day (stop at first golden found)
+    const promos = item.promotions || {};
+    let goldenFound = null;
+    for (var i = 0; i < activePeriods.length; i++) {
+      var pname = activePeriods[i];
+      var pdata = promos[pname];
+      if (!pdata) continue;
+      var rate = getDiscountRate(pdata, custType);
+      if (!rate) continue;
+      var isGolden = pname.toLowerCase().indexOf('ngày vàng') >= 0;
+      var result = {
+        discount: rate.discount,
+        periodName: pname,
+        code: rate[codeField] || '—'
+      };
+      if (isGolden) {
+        // Golden day: use immediately and stop looking
+        goldenFound = result;
+        break;
+      }
+      // For normal day: keep looking (maybe a golden day appears later in list)
+      if (!goldenFound) goldenFound = result;
+    }
+    // Return the best: golden if found, else the first normal
+    return goldenFound;
+  }
+
+  function formatDiscountLabel(discount) {
+    if (discount == null) return '—';
+    if (discount <= 1) return Math.round(discount * 100) + '%';
+    return formatPrice(discount);
+  }
+
+  // ─── TOPUNI COMBO HANDLING ──────────────────────────────────────────
+  // Logic: if user selects 2+ items that belong to the same "combo group"
+  // (e.g. 2 Nền tảng môn → combo nền tảng 2 môn), use the combo's price+promo.
+  // The promotions items define packages. Match selected catalog items against
+  // the `products` field of promotions items.
+
+  function matchTopuniPackages(selected, promoItems, activePeriods, custType, codeField) {
+    // Build a map: for each selected item, find which promo packages it could match
+    var results = [];
+    var usedPromos = [];
+
+    // Step 1: try to detect combos
+    // Group selected by type prefix
+    var nenTangItems = [];
+    var toanDienVipItems = [];
+    var tieuChuanVipItems = [];
+    var toanDienTnItems = [];
+    var tieuChuanTnItems = [];
+
+    for (var i = 0; i < selected.length; i++) {
+      var item = selected[i];
+      var name = (item.name || '').toLowerCase();
+      if (name.indexOf('nền tảng') >= 0) {
+        nenTangItems.push(item);
+      } else if (name.indexOf('toàn diện vip') >= 0 && name.indexOf('tn thpt') >= 0) {
+        toanDienVipItems.push(item);
+      } else if (name.indexOf('tiêu chuẩn vip') >= 0 && name.indexOf('tn thpt') >= 0) {
+        tieuChuanVipItems.push(item);
+      } else if (name.indexOf('toàn diện') >= 0 && name.indexOf('tn thpt') >= 0) {
+        toanDienTnItems.push(item);
+      } else if (name.indexOf('tiêu chuẩn') >= 0 && name.indexOf('tn thpt') >= 0) {
+        tieuChuanTnItems.push(item);
+      } else {
+        // Try to match individually against promo packages
+        var best = getBestPromoForItem(item, activePeriods, custType, codeField);
+        results.push({
+          items: [item],
+          listPrice: item.listPrice || 0,
+          promo: best,
+          isCombo: false
+        });
+      }
     }
 
-    const selected = getSelectedProducts(cat);
+    // Nền tảng combos: if 2+ nền tảng selected → try Nền tảng 2 môn or 3 môn
+    if (nenTangItems.length >= 2) {
+      // Find "Combo: Nền tảng 2 môn" or "Combo: Nền tảng 3 môn" in promo items
+      var combo2 = null, combo3 = null;
+      for (var j = 0; j < promoItems.length; j++) {
+        var p = promoItems[j];
+        if ((p.packageName || '').indexOf('Nền tảng 2') >= 0) combo2 = p;
+        if ((p.packageName || '').indexOf('Nền tảng 3') >= 0) combo3 = p;
+      }
+      var targetCombo = null;
+      if (nenTangItems.length >= 3 && combo3) targetCombo = combo3;
+      else if (combo2) targetCombo = combo2;
+
+      if (targetCombo) {
+        var comboPrice = targetCombo.listPrice || 0;
+        var comboBest = getBestPromoForItem(targetCombo, activePeriods, custType, codeField);
+        var finalP = comboBest ? applyDiscount(comboPrice, comboBest) : comboPrice;
+        results.push({
+          items: nenTangItems.slice(0, targetCombo === combo3 ? 3 : 2),
+          listPrice: comboPrice,
+          promo: comboBest,
+          finalPrice: finalP,
+          savings: comboBest ? (comboPrice - finalP) : 0,
+          isCombo: true,
+          comboName: 'Combo Nền tảng ' + (targetCombo === combo3 ? '3' : '2') + ' môn'
+        });
+        // Any extra items beyond the combo are handled individually
+        for (var k = (targetCombo === combo3 ? 3 : 2); k < nenTangItems.length; k++) {
+          var extra = nenTangItems[k];
+          var bestExtra = getBestPromoForItem(extra, activePeriods, custType, codeField);
+          results.push({
+            items: [extra],
+            listPrice: extra.listPrice || 0,
+            promo: bestExtra,
+            isCombo: false
+          });
+        }
+      } else {
+        // Fallback: treat as individual
+        for (var m = 0; m < nenTangItems.length; m++) {
+          var bestI = getBestPromoForItem(nenTangItems[m], activePeriods, custType, codeField);
+          results.push({
+            items: [nenTangItems[m]],
+            listPrice: nenTangItems[m].listPrice || 0,
+            promo: bestI,
+            isCombo: false
+          });
+        }
+      }
+    } else if (nenTangItems.length === 1) {
+      var best1 = getBestPromoForItem(nenTangItems[0], activePeriods, custType, codeField);
+      results.push({
+        items: [nenTangItems[0]],
+        listPrice: nenTangItems[0].listPrice || 0,
+        promo: best1,
+        isCombo: false
+      });
+    }
+
+    // VIP combo: if both toàn diện VIP + tiêu chuẩn VIP (TN THPT)
+    // → try "Comobo: Giải pháp toàn diện VIP 2 kỳ thi" (21M)
+    if (toanDienVipItems.length > 0 && tieuChuanVipItems.length > 0) {
+      var vipCombo = null;
+      for (var n = 0; n < promoItems.length; n++) {
+        var pn = promoItems[n];
+        if ((pn.packageName || '').indexOf('VIP 2 kỳ thi') >= 0) vipCombo = pn;
+      }
+      if (vipCombo) {
+        var vp = vipCombo.listPrice || (toanDienVipItems[0].listPrice + tieuChuanVipItems[0].listPrice);
+        var vb = getBestPromoForItem(vipCombo, activePeriods, custType, codeField);
+        var vf = vb ? applyDiscount(vp, vb) : vp;
+        results.push({
+          items: [toanDienVipItems[0], tieuChuanVipItems[0]],
+          listPrice: vp,
+          promo: vb,
+          finalPrice: vf,
+          savings: vb ? (vp - vf) : 0,
+          isCombo: true,
+          comboName: 'Combo VIP 2 kỳ thi'
+        });
+      } else {
+        // Treat individually
+        results.push({
+          items: [toanDienVipItems[0]],
+          listPrice: toanDienVipItems[0].listPrice || 0,
+          promo: getBestPromoForItem(toanDienVipItems[0], activePeriods, custType, codeField),
+          isCombo: false
+        });
+        results.push({
+          items: [tieuChuanVipItems[0]],
+          listPrice: tieuChuanVipItems[0].listPrice || 0,
+          promo: getBestPromoForItem(tieuChuanVipItems[0], activePeriods, custType, codeField),
+          isCombo: false
+        });
+      }
+    } else {
+      // Individual VIP items
+      for (var o = 0; o < toanDienVipItems.length; o++) {
+        var bi = getBestPromoForItem(toanDienVipItems[o], activePeriods, custType, codeField);
+        results.push({
+          items: [toanDienVipItems[o]],
+          listPrice: toanDienVipItems[o].listPrice || 0,
+          promo: bi,
+          isCombo: false
+        });
+      }
+      for (var p = 0; p < tieuChuanVipItems.length; p++) {
+        var bi2 = getBestPromoForItem(tieuChuanVipItems[p], activePeriods, custType, codeField);
+        results.push({
+          items: [tieuChuanVipItems[p]],
+          listPrice: tieuChuanVipItems[p].listPrice || 0,
+          promo: bi2,
+          isCombo: false
+        });
+      }
+    }
+
+    // Handle individual TN items
+    var tnItems = toanDienTnItems.concat(tieuChuanTnItems);
+    for (var q = 0; q < tnItems.length; q++) {
+      var bi3 = getBestPromoForItem(tnItems[q], activePeriods, custType, codeField);
+      results.push({
+        items: [tnItems[q]],
+        listPrice: tnItems[q].listPrice || 0,
+        promo: bi3,
+        isCombo: false
+      });
+    }
+
+    return results;
+  }
+
+  // ─── TOPCLASS TYPE+QUANTITY LOGIC ──────────────────────────────────
+  function matchTopclassPackages(selected, promoItems, activePeriods, custType, codeField, periodType) {
+    // Group selected items by productType
+    var groups = {};
+    for (var i = 0; i < selected.length; i++) {
+      var item = selected[i];
+      var type = item.productType || 'Khác';
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(item);
+    }
+
+    var results = [];
+    for (var type in groups) {
+      var items = groups[type];
+      var qty = items.length;
+
+      // Sum listPrice
+      var totalListPrice = 0;
+      for (var j = 0; j < items.length; j++) {
+        totalListPrice += items[j].listPrice || 0;
+      }
+
+      // Find the matching promotion item: same productType + same grade? + same quantity
+      // The promotions items for topclass have these fields: productType, feePackage, gradeLevel, subject, quantity
+      // We need to match: productType + quantity that matches the count of items selected
+      var matchedPromo = null;
+      for (var k = 0; k < promoItems.length; k++) {
+        var pi = promoItems[k];
+        // Check if this promo item's productType matches and quantity matches selected count
+        if (pi.productType === type && pi.quantity === qty) {
+          matchedPromo = pi;
+          break;
+        }
+      }
+
+      if (matchedPromo) {
+        // Use matchedPromo's promotions to get discount
+        var best = getBestPromoForItem(matchedPromo, activePeriods, custType, codeField);
+        var finalP = best ? applyDiscount(totalListPrice, best) : totalListPrice;
+        results.push({
+          items: items.slice(),
+          listPrice: totalListPrice,
+          promo: best,
+          finalPrice: finalP,
+          savings: best ? (totalListPrice - finalP) : 0,
+          isCombo: false,
+          groupLabel: type + ' (' + qty + ' khóa)'
+        });
+      } else {
+        // No matched promo — use individual pricing
+        for (var m = 0; m < items.length; m++) {
+          var bi = getBestPromoForItem(items[m], activePeriods, custType, codeField);
+          results.push({
+            items: [items[m]],
+            listPrice: items[m].listPrice || 0,
+            promo: bi,
+            isCombo: false
+          });
+        }
+      }
+    }
+    return results;
+  }
+
+  // ─── CALCULATE FEE (MAIN) ────────────────────────────────────────────
+  function calculateFee(cat) {
+    var custType = getSelectedCustType(cat);
+    if (!custType) return;
+
+    var selected = getSelectedProducts(cat);
     if (selected.length === 0) return;
 
-    const promo = (APP_DATA.promotions || {})[cat] || {};
-    const activePeriods = promo.activePeriods || [];
+    var promo = (APP_DATA.promotions || {})[cat] || {};
+    var activePeriods = promo.activePeriods || [];
     if (activePeriods.length === 0) {
-      const containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
-      const container = $('#' + containerId);
+      var containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
+      var container = $('#' + containerId);
       if (container) container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Hiện chưa có chương trình ưu đãi nào đang diễn ra</p></div>';
       return;
     }
 
-    const periodType = getActivePeriodType(cat);
-    const codeField = CREDENTIALS[ROLE].codeField;
-    const codeLabel = CREDENTIALS[ROLE].codeLabel;
+    var periodType = getActivePeriodType(cat);
+    var codeField = CREDENTIALS[ROLE].codeField;
+    var codeLabel = CREDENTIALS[ROLE].codeLabel;
+    var promoItems = promo.items || [];
 
-    const rows = [];
+    // === PRIORITY RULE: Golden day > Normal day ===
+    // The getBestPromoForItem function handles this: if ANY active period is golden,
+    // it uses golden discount and stops. Otherwise uses normal.
 
-    // ── Topuni: detect combos ──
-    let comboPairs = [];
+    // Build matching results
+    var matchedResults = [];
+
     if (cat === 'topuni') {
-      comboPairs = detectTopuniCombo(selected);
+      matchedResults = matchTopuniPackages(selected, promoItems, activePeriods, custType, codeField);
+    } else if (cat === 'topclass') {
+      matchedResults = matchTopclassPackages(selected, promoItems, activePeriods, custType, codeField, periodType);
+    } else {
+      // giasu: individual items
+      for (var i = 0; i < selected.length; i++) {
+        var item = selected[i];
+        var lp = item.listPrice || item.totalListPrice || 0;
+        var best = getBestPromoForItem(item, activePeriods, custType, codeField);
+        matchedResults.push({
+          items: [item],
+          listPrice: lp,
+          promo: best,
+          isCombo: false
+        });
+      }
     }
 
-    // Track which items are part of a combo, so we skip them individually
-    const comboItemSet = new Set();
-    for (const pair of comboPairs) {
-      comboItemSet.add(pair.toanDien);
-      comboItemSet.add(pair.tieuChuan);
-    }
+    // Convert matchedResults to rows
+    var rows = [];
+    for (var r = 0; r < matchedResults.length; r++) {
+      var mr = matchedResults[r];
+      var listPrice = mr.listPrice;
+      var discount = mr.promo ? mr.promo.discount : null;
+      var code = mr.promo ? mr.promo.code : '—';
+      var finalPrice = discount != null ? applyDiscount(listPrice, mr.promo) : listPrice;
+      var savings = discount != null ? (listPrice - finalPrice) : 0;
+      var isGolden = mr.promo ? (mr.promo.periodName || '').toLowerCase().indexOf('ngày vàng') >= 0 : false;
 
-    // ── Render combo pairs ──
-    for (const pair of comboPairs) {
-      const toanDien = pair.toanDien;
-      const tieuChuan = pair.tieuChuan;
-      const comboPrice = (toanDien.listPrice || 0) + (tieuChuan.listPrice || 0);
-      const comboName = 'Combo toàn diện VIP 2 kỳ thi ' + pair.suffix;
+      var name = mr.comboName || mr.groupLabel || mr.items[0].name || mr.items[0].packageName || 'Sản phẩm';
 
-      // Try to find combo-level discount
-      const tdPromo = findPromoForProduct(toanDien, activePeriods, custType);
-      const tcPromo = findPromoForProduct(tieuChuan, activePeriods, custType);
-
-      let discount = null;
-      let code = '—';
-      let finalPrice = comboPrice;
-
-      // Use the larger discount of the two components as combo discount
-      if (tdPromo || tcPromo) {
-        const tdDisc = tdPromo?.discount ?? 0;
-        const tcDisc = tcPromo?.discount ?? 0;
-        const tdCode = tdPromo?.[codeField] || '—';
-        const tcCode = tcPromo?.[codeField] || '—';
-        // For combo, use the best (largest) discount
-        discount = Math.max(tdDisc, tcDisc);
-        code = tdCode !== '—' ? tdCode : tcCode;
-        if (discount <= 1) {
-          finalPrice = Math.round(comboPrice * (1 - discount));
-        } else {
-          finalPrice = Math.max(0, comboPrice - discount);
-        }
+      if (mr.isCombo) {
+        finalPrice = mr.finalPrice != null ? mr.finalPrice : finalPrice;
+        savings = mr.savings != null ? mr.savings : savings;
       }
 
       rows.push({
-        name: comboName,
-        listPrice: comboPrice,
-        discount: discount,
-        finalPrice: finalPrice,
-        savings: Math.max(0, comboPrice - finalPrice),
-        code: code,
-        isCombo: true,
-        comboComponents: [toanDien.name, tieuChuan.name]
-      });
-    }
-
-    // ── Render individual items (excluding those in combos) ──
-    for (const item of selected) {
-      if (comboItemSet.has(item)) continue;
-
-      const listPrice = item.listPrice || item.totalListPrice || 0;
-      const bestPromo = findPromoForProduct(item, activePeriods, custType);
-
-      let discount = null;
-      let finalPrice = listPrice;
-      let code = '—';
-
-      if (bestPromo) {
-        if (bestPromo.discount != null) discount = bestPromo.discount;
-        if (bestPromo.finalPrice != null && bestPromo.finalPrice < listPrice) {
-          finalPrice = bestPromo.finalPrice;
-        } else if (discount != null) {
-          finalPrice = discount <= 1
-            ? Math.round(listPrice * (1 - discount))
-            : Math.max(0, listPrice - discount);
-        }
-        code = bestPromo[codeField] || '—';
-      }
-
-      const savings = Math.max(0, listPrice - finalPrice);
-
-      rows.push({
-        name: getCalcProductName(cat, item),
+        name: name,
+        items: mr.items,
         listPrice: listPrice,
         discount: discount,
         finalPrice: finalPrice,
         savings: savings,
         code: code,
-        isCombo: false,
-        comboComponents: null
+        isCombo: mr.isCombo,
+        isGolden: isGolden,
+        periodName: mr.promo ? mr.promo.periodName : null
       });
     }
 
     renderCalcResult(cat, rows, codeLabel, custType, periodType);
   }
 
+  // ─── RENDER CALC RESULT ─────────────────────────────────────────────
   function renderCalcResult(cat, rows, codeLabel, custType, periodType) {
-    const containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
-    const container = $('#' + containerId);
+    var containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    var container = $('#' + containerId);
     if (!container) return;
 
-    let totalOriginal = 0, totalFinal = 0, totalSavings = 0;
-
-    let periodBadge = periodType === 'golden'
+    var periodBadge = periodType === 'golden'
       ? '<span class="period-badge golden">🌟 Ngày vàng</span>'
       : '<span class="period-badge normal">📅 Ngày thường</span>';
+    var custBadge = '<span class="cust-badge">KH <strong>' + (custType === 'new' ? 'MỚI' : 'CŨ') + '</strong></span>';
 
-    let html = '<div class="calc-result-header">'
-      + periodBadge
-      + '<span class="cust-badge">KH <strong>' + (custType === 'new' ? 'MỚI' : 'CŨ') + '</strong></span>'
-      + '</div>';
+    var html = '<div class="calc-result-header">' + periodBadge + custBadge + '</div>';
     html += '<div class="table-wrapper"><table class="result-table"><thead><tr>';
     html += '<th>Sản phẩm</th><th>HP gốc</th><th>Ưu đãi</th><th>HP sau ưu đãi</th><th>Tiết kiệm</th>';
-    html += `<th>${codeLabel}</th>`;
+    html += '<th>' + codeLabel + '</th><th></th>';
     html += '</tr></thead><tbody>';
 
-    for (const r of rows) {
-      totalOriginal += r.listPrice;
-      totalFinal += r.finalPrice;
-      totalSavings += r.savings;
+    var totalOrig = 0, totalFinal = 0, totalSave = 0;
 
-      html += '<tr' + (r.isCombo ? ' class="combo-row"' : '') + '>';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      totalOrig += r.listPrice;
+      totalFinal += r.finalPrice;
+      totalSave += r.savings;
+
+      html += '<tr class="' + (r.isGolden ? 'golden-row' : '') + (r.isCombo ? ' combo-row' : '') + '">';
       html += '<td style="text-align:left;font-weight:600">';
       if (r.isCombo) html += '<span class="combo-tag">COMBO</span> ';
       html += r.name + '</td>';
       html += '<td class="price-original">' + formatPrice(r.listPrice) + '</td>';
-      html += '<td class="price-discount">'
-        + (r.discount != null ? formatDiscount(r.discount) : '—')
-        + '</td>';
+      html += '<td class="price-discount">' + formatDiscountLabel(r.discount) + '</td>';
       html += '<td class="price-final">' + formatPrice(r.finalPrice) + '</td>';
       html += '<td class="price-save">' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
-      html += '<td>' + (r.code !== '—'
-        ? '<span class="tu-code-badge">' + r.code + '</span> <button class="copy-icon" title="Sao chép" onclick="copyText(&#39;' + r.code + '&#39;, this)">📋</button>'
-        : '—') + '</td>';
+      html += '<td>';
+      if (r.code !== '—') {
+        html += '<span class="tu-code-badge">' + r.code + '</span> ';
+        html += '<button class="copy-icon" title="Sao chép" onclick="copyText(\'' + r.code.replace(/'/g, "\\'") + '\', this)">📋</button>';
+      } else {
+        html += '—';
+      }
+      html += '</td>';
+      // Delete button per row — unchecks the first item's checkbox
+      html += '<td><button class="btn-remove-row" title="Bỏ chọn" onclick="removeCalcRow(\'' + cat + '\',' + (i) + ',\'' + (r.isCombo ? 'combo' : 'single') + '\')">✕</button></td>';
       html += '</tr>';
     }
 
     html += '</tbody></table></div>';
 
+    // Summary
     html += '<div class="summary-row">';
-    html += '<div class="summary-item"><span class="s-label">Tổng HP gốc</span><span class="s-value">' + formatPrice(totalOriginal) + '</span></div>';
+    html += '<div class="summary-item"><span class="s-label">Tổng HP gốc</span><span class="s-value">' + formatPrice(totalOrig) + '</span></div>';
     html += '<div class="summary-item"><span class="s-label">Tổng HP sau ưu đãi</span><span class="s-value green">' + formatPrice(totalFinal) + '</span></div>';
-    html += '<div class="summary-item"><span class="s-label">Tổng tiết kiệm</span><span class="s-value green">-' + formatPrice(totalSavings) + '</span></div>';
+    html += '<div class="summary-item"><span class="s-label">Tổng tiết kiệm</span><span class="s-value green">-' + formatPrice(totalSave) + '</span></div>';
     html += '</div>';
 
     container.innerHTML = html;
   }
 
+  // ─── REMOVE INDIVIDUAL CALC ROW ─────────────────────────────────────
+  function removeCalcRow(cat, rowIdx, type) {
+    var rows = []; // We need to uncheck products from the original source
+    var selected = getSelectedProducts(cat);
+    // For combo rows: uncheck ALL items in the combo
+    // For single rows: uncheck just that item
+    // Strategy: clear all checked items, then re-check the ones we want to keep
+    // Simpler: just clear all and re-check the ones NOT in this row
+    var allCheckboxes = $$('#calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1) + ' input[type="checkbox"]');
+    // Re-run calculation will happen automatically via the 'change' events
+    // But we need to know WHICH items this row represents
+    // Get the current result data to identify the row
+    var allRows = [];
+    // Use the DOM: find all rows, get the product name from this row
+    var tableRows = container.querySelectorAll('.result-table tbody tr');
+    if (tableRows[rowIdx]) {
+      var nameCell = tableRows[rowIdx].querySelector('td:first-child');
+      if (nameCell) {
+        var productName = nameCell.textContent.trim();
+        // Find items in selected that match this name
+        for (var i = 0; i < selected.length; i++) {
+          var itemName = selected[i].name || selected[i].packageName || '';
+          if (itemName === productName || productName.indexOf(itemName) >= 0 || itemName.indexOf(productName) >= 0) {
+            // Uncheck the checkbox for this item
+            var cb = allCheckboxes[i];
+            if (cb) {
+              cb.checked = false;
+              cb.closest('.product-item')?.classList.remove('selected');
+              cb.dispatchEvent(new Event('change'));
+            }
+          }
+        }
+      }
+    }
+    // If it's a combo, we need to uncheck ALL items belonging to the combo
+    // The simplest approach: clear checked state for any checkbox that was checked
+    // Then the 'change' events will recalculate
+  }
+
+  function removeComboRows(cat) {
+    // Clear all checkbox and let user re-select
+    var allCheckboxes = $$('#calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1) + ' input[type="checkbox"]');
+    Array.from(allCheckboxes).forEach(function(cb) {
+      if (cb.checked) {
+        cb.checked = false;
+        cb.closest('.product-item')?.classList.remove('selected');
+        cb.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  function applyDiscount(basePrice, promo) {
+    if (!promo || promo.discount == null) return basePrice;
+    var disc = promo.discount;
+    if (disc <= 1) return Math.round(basePrice * (1 - disc));
+    return Math.max(0, basePrice - disc);
+  }
+
   function clearCalc(cat) {
-    const checkboxes = $$(`#calcPanel${cat.charAt(0).toUpperCase() + cat.slice(1)} input[type="checkbox"]:checked`);
-    checkboxes.forEach(cb => { cb.checked = false; cb.closest('.product-item')?.classList.remove('selected'); });
+    var checkboxes = $$('#calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1) + ' input[type="checkbox"]:checked');
+    Array.from(checkboxes).forEach(function(cb) {
+      cb.checked = false;
+      if (cb.closest) cb.closest('.product-item')?.classList.remove('selected');
+    });
     updateCalcButton(cat);
-    const containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
-    const container = $('#' + containerId);
+    var containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    var container = $('#' + containerId);
     if (container) container.innerHTML = '<div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn sản phẩm bên trái rồi nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>';
   }
 
