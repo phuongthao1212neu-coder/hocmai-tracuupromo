@@ -1010,7 +1010,11 @@
 
     var periodType = getActivePeriodType(cat);
     var codeField = CREDENTIALS[ROLE].codeField;
+    // DS role Gia sư: dùng mã cart (code) thay vì amsCode
+    if (ROLE === 'ds' && cat === 'giasu') codeField = 'code';
     var codeLabel = CREDENTIALS[ROLE].codeLabel;
+    // DS role Gia sư: hiển thị mã Cart
+    if (ROLE === 'ds' && cat === 'giasu') codeLabel = 'Mã Cart';
     var promoItems = promo.items || [];
 
     // === PRIORITY RULE: Golden day > Normal day ===
