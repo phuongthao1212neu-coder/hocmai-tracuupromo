@@ -360,16 +360,15 @@
         const period = (promo.periods || []).find(p => p.name === pname);
         if (!period) continue;
         const isGolden = (period.type || '').includes('golden') || pname.toLowerCase().includes('ngày vàng');
-        // NEW: Chỉ hiển thị banner cho ngày vàng, không hiển thị cho ngày thường
         if (!isGolden) continue;
         const div = document.createElement('div');
         div.className = 'day-banner show golden';
-        // NEW: Nội dung banner đúng theo yêu cầu
+        // FIX: Nội dung banner ngắn gọn, không có ngày
         div.innerHTML = `
           <div class="b-icon">🌟</div>
           <div class="b-text">
-            <strong>🔥 Ưu đãi ngày vàng đang diễn ra!</strong>
-            <span>Ưu đãi ngày vàng đang diễn ra từ ${period.dateRange || '01/01/2026 đến 01/02/2026'}. Chúc bạn chốt đơn thành công!</span>
+            <strong>Ưu đãi ngày vàng đang diễn ra!</strong>
+            <span>Chúc bạn chốt đơn thành công!</span>
           </div>`;
         wrap.appendChild(div);
       }
@@ -461,6 +460,11 @@
     </td>`;
   }
 
+  function cleanPeriodName(name) {
+    // Remove date patterns like "| 01/08 - 31/08", "(01/08/2026 - 31/08/2026)", etc.
+    return name.replace(/[|(]\s*\d{1,2}\/\d{1,2}.*?(?:đến|-).*?(?:\d{1,2}\/\d{1,4})?\s*[)]?\s*/g, '').trim();
+  }
+
   function buildPromoTable(cat) {
     if (!APP_DATA) return;
     const role = ROLE;
@@ -503,7 +507,7 @@
     for (const p of periods) {
       const pType = p.type || 'unknown';
       const custCount = (p.custs || []).length || 1;
-      html += `<th class="${pType === 'golden' ? 'th-golden' : 'th-normal'}" colspan="${custCount}">${p.name}</th>`;
+      html += `<th class="${pType === 'golden' ? 'th-golden' : 'th-normal'}" colspan="${custCount}">${cleanPeriodName(p.name)}</th>`;
     }
     html += '</tr>';
 

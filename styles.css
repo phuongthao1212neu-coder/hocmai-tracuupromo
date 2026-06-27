@@ -75,32 +75,45 @@ body {
 .btn-logout:hover { background:rgba(255,255,255,.22); }
 
 /* ═══════ DAY BANNER ═══════ */
-.banner-group { margin-bottom:12px; }
+.banner-group { margin-bottom:16px; }
 .day-banner {
-  display:none; flex-wrap:wrap; width:100%;
-  padding:12px 18px; border-radius:14px;
-  align-items:center; gap:12px;
+  display:none; width:100%;
+  padding:16px 20px; border-radius:16px;
+  align-items:center; gap:14px;
   border:1px solid transparent;
   transition:.2s;
 }
 .day-banner.show { display:flex; }
 .day-banner.golden {
-  background:linear-gradient(135deg,#FFF7ED 0%,#FFEDD5 100%);
+  background:linear-gradient(135deg,#FFF7ED 0%,#FED7AA 100%);
   border-color:#FDBA74; color:#9A3412;
+  box-shadow:0 4px 16px rgba(251,146,60,.18);
+  position:relative; overflow:hidden;
 }
-.day-banner.normal {
-  background:#F8FAFC; border-color:#E2E8F0; color:#1E293B;
+.day-banner.golden::before {
+  content:''; position:absolute; top:-50%; right:-20%;
+  width:200px; height:200px; border-radius:50%;
+  background:rgba(251,191,36,.12);
+  pointer-events:none;
+}
+.day-banner.golden::after {
+  content:'✨'; position:absolute; bottom:8px; right:16px;
+  font-size:32px; opacity:.25; pointer-events:none;
 }
 .day-banner .b-icon {
-  width:40px; height:40px; border-radius:10px;
+  width:44px; height:44px; border-radius:12px;
   display:inline-flex; align-items:center; justify-content:center;
-  flex-shrink:0; font-size:20px;
+  flex-shrink:0; font-size:22px;
+  background:rgba(255,255,255,.6);
+  backdrop-filter:blur(4px);
+  position:relative; z-index:1;
 }
-.day-banner.golden .b-icon { background:#FED7AA; }
-.day-banner.normal .b-icon { background:#DBEAFE; }
-.day-banner .b-text { flex:1; min-width:0; }
-.day-banner .b-text strong { display:block; font-size:14px; line-height:1.3; }
-.day-banner .b-text span { font-size:12px; opacity:.85; }
+.day-banner .b-text { flex:1; min-width:0; position:relative; z-index:1; }
+.day-banner .b-text strong {
+  display:block; font-size:15px; line-height:1.3;
+  margin-bottom:2px;
+}
+.day-banner .b-text span { font-size:13px; opacity:.85; }
 
 /* ═══════ APP LAYOUT ═══════ */
 .app-layout {
@@ -138,7 +151,7 @@ body {
 
 /* ═══════ SEARCH ═══════ */
 .search-bar {
-  position:relative; margin-bottom:14px;
+  position:relative; margin-bottom:14px; margin-top:8px;
 }
 .search-bar input {
   width:100%; padding:14px 18px 14px 48px;
@@ -176,22 +189,24 @@ body {
 .promo-table thead th {
   padding:14px 14px; text-align:center;
   font-size:12px; font-weight:700; color:#fff;
-  position:sticky; top:0; z-index:5;
+  position:sticky; z-index:5;
   border-bottom:2px solid rgba(255,255,255,.2);
   white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
   vertical-align: middle;
 }
-.promo-table thead tr:first-child th { padding:12px 14px; font-size:13px; }
+.promo-table thead tr:first-child th { padding:12px 14px; font-size:13px; top:0; }
 .promo-table thead tr:nth-child(2) th {
   font-size:11px; font-weight:600; padding:8px 12px;
+  top:42px;
 }
 
 .th-fixed {
   background:var(--hm-navy) !important;
-  min-width:140px; text-align:left !important;
+  min-width:140px; text-align:center !important;
 }
+.th-fixed:first-child { text-align:left; padding-left:18px; }
 .th-normal {
   background:linear-gradient(180deg,#3B82F6 0%,#2563EB 100%) !important;
 }
