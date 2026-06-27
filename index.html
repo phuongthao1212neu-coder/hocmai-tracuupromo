@@ -531,6 +531,10 @@
           const ctypeLabel = getCustLabel(ctype);
           periodColumns.push({ period: p, cust: c, pType, ctype, ctypeLabel });
         }
+        // TVV Gia sư: thêm cột Mọi KH (all)
+        if (cat === 'giasu') {
+          periodColumns.push({ period: p, cust: { type: 'all' }, pType, ctype: 'all', ctypeLabel: 'Mọi KH' });
+        }
       }
     }
 
@@ -548,6 +552,8 @@
       let custCount = (p.custs || []).length || 1;
       // DS role Gia sư: chỉ 1 cột Mọi KH
       if (ROLE === 'ds' && cat === 'giasu') custCount = 1;
+      // TVV Gia sư: +1 cho cột Mọi KH
+      else if (cat === 'giasu') custCount = custCount + 1;
       html += `<th class="${pType === 'golden' ? 'th-golden' : 'th-normal'}" colspan="${custCount}">${cleanPeriodName(p.name)}</th>`;
     }
     html += '</tr>';
