@@ -281,32 +281,44 @@
 
   // ─── LOGIN ────────────────────────────────────────────────────────
   function doLogin() {
-    const user = $('#username').value.trim();
-    const pass = $('#password').value.trim();
     const errEl = $('#loginError');
     errEl.textContent = '';
-    if (!user || !pass) { errEl.textContent = 'Vui lòng nhập đầy đủ thông tin'; return; }
     // Determine role from selected radio
     const roleRadio = $('input[name="role"]:checked');
     const selectedRole = roleRadio ? roleRadio.value : 'tvv';
+
+    // Đại sứ: không cần đăng nhập, vào thẳng
+    if (selectedRole === 'ds') {
+      enterApp('ds');
+      return;
+    }
+
+    // TVV: cần user + password
+    const user = $('#username').value.trim();
+    const pass = $('#password').value.trim();
+    if (!user || !pass) { errEl.textContent = 'Vui lòng nhập đầy đủ thông tin'; return; }
     const cred = CREDENTIALS[selectedRole];
     if (!cred) { errEl.textContent = 'Vai trò không hợp lệ'; return; }
     if (user === cred.user && pass === cred.pass) {
-      ROLE = selectedRole;
-      $('#loginPage').style.display = 'none';
-      $('#appPage').style.display = '';
-      $('#roleBadgeText').textContent = selectedRole === 'tvv' ? 'Tư vấn viên' : 'Đại sứ';
-      if (selectedRole === 'ds') {
-        document.body.classList.add('role-ds');
-        $('#roleBadge .badge-icon').textContent = '🌟';
-      } else {
-        document.body.classList.remove('role-ds');
-        $('#roleBadge .badge-icon').textContent = '💼';
-      }
-      loadData();
+      enterApp(selectedRole);
     } else {
       errEl.textContent = 'Tên đăng nhập hoặc mật khẩu không đúng';
     }
+  }
+
+  function enterApp(selectedRole) {
+    ROLE = selectedRole;
+    $('#loginPage').style.display = 'none';
+    $('#appPage').style.display = '';
+    $('#roleBadgeText').textContent = selectedRole === 'tvv' ? 'Tư vấn viên' : 'Đại sứ';
+    if (selectedRole === 'ds') {
+      document.body.classList.add('role-ds');
+      $('#roleBadge .badge-icon').textContent = '🌟';
+    } else {
+      document.body.classList.remove('role-ds');
+      $('#roleBadge .badge-icon').textContent = '💼';
+    }
+    loadData();
   }
   function doLogout() {
     ROLE = null;
