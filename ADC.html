@@ -198,8 +198,9 @@
                   <tr>
                     <th>Sản phẩm</th>
                     <th>Học phí gốc</th>
-                    <th>HP sau ưu đãi</th>
-                    <th>Tiết kiệm</th>
+                    <th>KH mới (HP)</th>
+                    <th>KH cũ (HP)</th>
+                    <th>Tiết kiệm KH mới</th>
                     <th>Mã AMS</th>
                   </tr>
                 </thead>
@@ -211,11 +212,15 @@
                   <span class="s-value" id="sumOriginal">0₫</span>
                 </div>
                 <div class="summary-item">
-                  <span class="s-label">🆕 Tổng HP sau ưu đãi</span>
+                  <span class="s-label">🆕 Tổng HP KH mới</span>
                   <span class="s-value green" id="sumNew">0₫</span>
                 </div>
                 <div class="summary-item">
-                  <span class="s-label">💰 Tổng tiết kiệm</span>
+                  <span class="s-label">🔄 Tổng HP KH cũ</span>
+                  <span class="s-value green" id="sumOld">0₫</span>
+                </div>
+                <div class="summary-item">
+                  <span class="s-label">💰 Tiết kiệm tối đa</span>
                   <span class="s-value green" id="sumSave">0₫</span>
                 </div>
               </div>
@@ -429,8 +434,8 @@ function renderTable(cat) {
   }
   for (const p of periods) {
     const cls = p.type === 'golden' ? 'th-golden' : 'th-normal';
-    const colSpan = (cat === 'giasu') ? 3 : 2; // Gia sư: KH mới + KH cũ + Cart
-    htmlHeader1 += '<th colspan="' + colSpan + '" class="' + cls + '">' + p.name + '</th>';
+    const colSpan = 2; // KH mới + KH cũ
+    htmlHeader1 += `<th colspan="${colSpan}" class="${cls}">${p.name}</th>`;
   }
   htmlHeader1 += '</tr>';
 
@@ -439,11 +444,11 @@ function renderTable(cat) {
   for (const fc of fixedCols) {
     htmlHeader2 += '<th></th>';
   }
-  const custLabels = (cat === 'giasu') ? ['KH mới', 'KH cũ', 'Cart'] : ['KH mới', 'KH cũ'];
+  const custLabels = ['KH mới', 'KH cũ'];
   for (const p of periods) {
     const subCls = p.type === 'golden' ? 'th-golden-sub' : 'th-normal-sub';
     for (const cl of custLabels) {
-      htmlHeader2 += '<th class="' + subCls + '">' + cl + '</th>';
+      htmlHeader2 += `<th class="${subCls}">${cl}</th>`;
     }
   }
   htmlHeader2 += '</tr>';
@@ -477,50 +482,31 @@ function renderTable(cat) {
       htmlRows += '<td' + alignStyle + '>' + (val || '—') + '</td>';
     }
     // Promo columns
-    const custTypes = (cat === 'giasu') ? ['new', 'old', 'all'] : ['new', 'old'];
     for (const p of periods) {
-      const prom = (item.promotions || {})[p.name] || {};
-      for (const custType of custTypes) {
+      const prom = item.promotions?.[p.name] || {};
+      for (const custType of ['new', 'old']) {
         const custData = prom[custType] || {};
-        if (custType === 'all') {
-          // Cart code cho mọi KH (Gia sư)
-          const code = custData.code || custData.amsCode || '';
-          htmlRows += '<td><div class="promo-cell">';
-          if (custData.discount !== undefined) {
-            htmlRows += '<div class="tu-discount">' + formatDiscount(custData.discount) + '</div>';
-          }
-          if (code) {
-            htmlRows += '<div class="tu-code-row">'
-              + '<span class="tu-code-badge">Cart</span>'
-              + '<span style="font-size:11px;font-weight:600;color:#1E293B;font-family:monospace;">' + code + '</span>'
-              + '<button class="copy-icon" onclick="copyText(\'' + code + '\', this)" title="Copy mã Cart">📋</button>'
-              + '</div>';
-          } else {
-            htmlRows += '<div class="tu-code-row" style="opacity:.4;font-size:11px;color:#94A3B8;">—</div>';
-          }
-          htmlRows += '</div></td>';
-        } else {
-          // KH mới / KH cũ
-          htmlRows += '<td><div class="promo-cell">';
-          if (custData.discount !== undefined) {
-            htmlRows += '<div class="tu-discount">' + formatDiscount(custData.discount) + '</div>';
-          }
-          if (custData.finalPrice !== undefined) {
-            const priceCls = p.type === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
-            htmlRows += '<div class="' + priceCls + '">' + formatPrice(custData.finalPrice) + '</div>';
-          }
-          const code = custData.amsCode || custData.code || '';
-          if (code) {
-            htmlRows += '<div class="tu-code-row">'
-              + '<span class="tu-code-badge">AMS</span>'
-              + '<span style="font-size:11px;font-weight:600;color:#1E293B;font-family:monospace;">' + code + '</span>'
-              + '<button class="copy-icon" onclick="copyText(\'' + code + '\', this)" title="Copy mã AMS">📋</button>'
-              + '</div>';
-          } else {
-            htmlRows += '<div class="tu-code-row" style="opacity:.4;font-size:11px;color:#94A3B8;">—</div>';
-          }
-          htmlRows += '</div></td>';
+        const custLabel = custType === 'new' ? 'KH mới' : 'KH cũ';
+        htmlRows += '<td><div class="promo-cell">';
+        if (custData.discount !== undefined) {
+          htmlRows += `<div class="tu-discount">${formatDiscount(custData.discount)}</div>`;
         }
+        if (custData.finalPrice !== undefined) {
+          const priceCls = p.type === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
+          htmlRows += `<div class="${priceCls}">${formatPrice(custData.finalPrice)}</div>`;
+        }
+        // AMS code (role = ds)
+        const code = custData.amsCode || custData.code || '';
+        if (code) {
+          htmlRows += `<div class="tu-code-row">
+            <span class="tu-code-badge">AMS</span>
+            <span style="font-size:11px;font-weight:600;color:#1E293B;font-family:monospace;">${code}</span>
+            <button class="copy-icon" onclick="copyText('${code}', this)" title="Copy mã AMS">📋</button>
+          </div>`;
+        } else {
+          htmlRows += `<div class="tu-code-row" style="opacity:.4;font-size:11px;color:#94A3B8;">—</div>`;
+        }
+        htmlRows += '</div></td>';
       }
     }
     htmlRows += '</tr>';
@@ -655,21 +641,23 @@ function calculate() {
   empty.style.display = 'none';
   area.style.display = '';
 
-  const cat = activeCategory;
+  const cat = activeCategory; // use current lookup category or detect
   const activePeriods = getActivePeriods(cat);
   const allPeriods = getAllPeriods(cat);
+  // Pick best period: golden > normal > first
   const bestPeriod = activePeriods.find(p => {
     const per = allPeriods.find(pp => pp.name === p);
     return per && per.type === 'golden';
   }) || activePeriods[0] || '';
 
   let html = '';
-  let sumOriginal = 0, sumFinal = 0, sumSave = 0;
+  let sumOriginal = 0, sumNew = 0, sumOld = 0, sumSave = 0;
 
   for (const item of selectedCalcItems) {
     const price = item.price;
     sumOriginal += price;
 
+    // Find promotion data for this product
     const promoItems = allData?.promotions?.[cat]?.items || [];
     let matched = null;
     for (const pi of promoItems) {
@@ -683,36 +671,51 @@ function calculate() {
       }
     }
 
-    let finalPrice = price;
-    let discountAmount = 0;
+    let discountNew = 0, discountOld = 0;
     let amsCode = '';
-    if (matched && matched.new) {
-      const d = matched.new;
-      if (d.finalPrice !== undefined) {
-        finalPrice = d.finalPrice;
-        discountAmount = price - d.finalPrice;
-      } else if (d.discount !== undefined) {
-        discountAmount = d.discount <= 1 ? price * d.discount : d.discount;
-        finalPrice = Math.max(0, price - discountAmount);
+    if (matched) {
+      if (matched.new) {
+        if (matched.new.finalPrice !== undefined) discountNew = price - matched.new.finalPrice;
+        else if (matched.new.discount !== undefined) {
+          // ≤1 là %, >1 là số tiền cố định
+          discountNew = matched.new.discount <= 1
+            ? price * matched.new.discount
+            : matched.new.discount;
+        }
+        amsCode = matched.new.amsCode || matched.new.code || '';
       }
-      amsCode = d.amsCode || d.code || '';
+      if (matched.old) {
+        if (matched.old.finalPrice !== undefined) discountOld = price - matched.old.finalPrice;
+        else if (matched.old.discount !== undefined) {
+          discountOld = matched.old.discount <= 1
+            ? price * matched.old.discount
+            : matched.old.discount;
+        }
+        if (!amsCode) amsCode = matched.old.amsCode || matched.old.code || '';
+      }
     }
 
-    sumFinal += finalPrice;
-    sumSave += discountAmount;
+    const newPrice = Math.max(0, price - discountNew);
+    const oldPrice = Math.max(0, price - discountOld);
+    sumNew += newPrice;
+    sumOld += oldPrice;
+    const save = (price - newPrice) > (price - oldPrice) ? (price - newPrice) : (price - oldPrice);
+    sumSave += save;
 
-    html += '<tr>'
-      + '<td style="text-align:left;">' + item.name + '</td>'
-      + '<td class="price-original">' + formatPrice(price) + '</td>'
-      + '<td class="price-final">' + formatPrice(finalPrice) + '</td>'
-      + '<td class="price-save">' + (discountAmount > 0 ? '-' + formatPrice(discountAmount) : '—') + '</td>'
-      + '<td>' + (amsCode ? '<span class="tu-code-badge">AMS</span> ' + amsCode : '—') + '</td>'
-      + '</tr>';
+    html += `<tr>
+      <td style="text-align:left;">${item.name}</td>
+      <td class="price-original">${formatPrice(price)}</td>
+      <td class="price-final">${formatPrice(newPrice)}</td>
+      <td class="price-final">${formatPrice(oldPrice)}</td>
+      <td class="price-save">${formatPrice(save)}</td>
+      <td>${amsCode ? `<span class="tu-code-badge">AMS</span> ${amsCode}` : '—'}</td>
+    </tr>`;
   }
 
   body.innerHTML = html;
   document.getElementById('sumOriginal').textContent = formatPrice(sumOriginal);
-  document.getElementById('sumNew').textContent = formatPrice(sumFinal);
+  document.getElementById('sumNew').textContent = formatPrice(sumNew);
+  document.getElementById('sumOld').textContent = formatPrice(sumOld);
   document.getElementById('sumSave').textContent = formatPrice(sumSave);
 }
 
