@@ -961,18 +961,28 @@
 
   // ─── TOPCLASS TYPE+QUANTITY LOGIC ──────────────────────────────────
   function matchTopclassPackages(selected, promoItems, activePeriods, custType, codeField, periodType) {
-    // Group selected items by productType
+    // Group selected items by productType + feePackage (cùng loại SP + cùng gói HP)
+    // VD: "Học tương tác" + "Năm học" = 1 group riêng, "Học tương tác" + "Hè" = group riêng
     var groups = {};
+    var groupKeys = [];
     for (var i = 0; i < selected.length; i++) {
       var item = selected[i];
       var type = item.productType || 'Khác';
-      if (!groups[type]) groups[type] = [];
-      groups[type].push(item);
+      var fpackage = item.feePackage || 'Khác';
+      var key = type + '|' + fpackage;
+      if (!groups[key]) {
+        groups[key] = [];
+        groupKeys.push(key);
+      }
+      groups[key].push(item);
     }
 
     var results = [];
-    for (var type in groups) {
-      var items = groups[type];
+    for (var g = 0; g < groupKeys.length; g++) {
+      var key = groupKeys[g];
+      var items = groups[key];
+      var type = items[0].productType;
+      var fpackage = items[0].feePackage;
       var qty = items.length;
 
       // Sum listPrice
@@ -981,14 +991,11 @@
         totalListPrice += items[j].listPrice || 0;
       }
 
-      // Find the matching promotion item: same productType + same grade? + same quantity
-      // The promotions items for topclass have these fields: productType, feePackage, gradeLevel, subject, quantity
-      // We need to match: productType + quantity that matches the count of items selected
+      // Find the matching promotion item: same productType + same feePackage + same quantity
       var matchedPromo = null;
       for (var k = 0; k < promoItems.length; k++) {
         var pi = promoItems[k];
-        // Check if this promo item's productType matches and quantity matches selected count
-        if (pi.productType === type && pi.quantity === qty) {
+        if (pi.productType === type && pi.feePackage === fpackage && pi.quantity === qty) {
           matchedPromo = pi;
           break;
         }
@@ -1166,41 +1173,44 @@
 
   // ─── REMOVE INDIVIDUAL CALC ROW ─────────────────────────────────────
   function removeCalcRow(cat, rowIdx, type) {
-    var rows = []; // We need to uncheck products from the original source
+    // Get the container for this category
+    var containerId = 'calcResult' + cat.charAt(0).toUpperCase() + cat.slice(1);
+    var container = $('#' + containerId);
+    if (!container) return;
+
     var selected = getSelectedProducts(cat);
-    // For combo rows: uncheck ALL items in the combo
-    // For single rows: uncheck just that item
-    // Strategy: clear all checked items, then re-check the ones we want to keep
-    // Simpler: just clear all and re-check the ones NOT in this row
     var allCheckboxes = $$('#calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1) + ' input[type="checkbox"]');
-    // Re-run calculation will happen automatically via the 'change' events
-    // But we need to know WHICH items this row represents
-    // Get the current result data to identify the row
-    var allRows = [];
-    // Use the DOM: find all rows, get the product name from this row
+
+    // Get the current result rows from DOM to identify which products this row represents
     var tableRows = container.querySelectorAll('.result-table tbody tr');
     if (tableRows[rowIdx]) {
       var nameCell = tableRows[rowIdx].querySelector('td:first-child');
       if (nameCell) {
         var productName = nameCell.textContent.trim();
-        // Find items in selected that match this name
+
+        // Find items in selected that match this name (partial match for combo names)
+        var itemsToUncheck = [];
         for (var i = 0; i < selected.length; i++) {
           var itemName = selected[i].name || selected[i].packageName || '';
-          if (itemName === productName || productName.indexOf(itemName) >= 0 || itemName.indexOf(productName) >= 0) {
-            // Uncheck the checkbox for this item
-            var cb = allCheckboxes[i];
-            if (cb) {
-              cb.checked = false;
-              cb.closest('.product-item')?.classList.remove('selected');
-              cb.dispatchEvent(new Event('change'));
-            }
+          if (itemName === productName ||
+              productName.indexOf(itemName) >= 0 ||
+              itemName.indexOf(productName) >= 0 ||
+              (productName.includes('COMBO') && productName.indexOf(itemName) >= 0)) {
+            itemsToUncheck.push(i);
+          }
+        }
+
+        // Uncheck matching checkboxes
+        for (var idx = 0; idx < itemsToUncheck.length; idx++) {
+          var cb = allCheckboxes[itemsToUncheck[idx]];
+          if (cb) {
+            cb.checked = false;
+            cb.closest('.product-item')?.classList.remove('selected');
+            cb.dispatchEvent(new Event('change'));
           }
         }
       }
     }
-    // If it's a combo, we need to uncheck ALL items belonging to the combo
-    // The simplest approach: clear checked state for any checkbox that was checked
-    // Then the 'change' events will recalculate
   }
 
   function removeComboRows(cat) {
