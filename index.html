@@ -269,8 +269,24 @@
   // ─── DATA ─────────────────────────────────────────────────────────
   async function loadData() {
     showLoading('Đang tải dữ liệu…', 'Kết nối đến máy chủ');
+    // Show progress message after 3s to reassure user
+    const progressTimer = setTimeout(() => {
+      $('#loadingText').textContent = 'Đang tải dữ liệu…';
+      $('#loadingSubtext').textContent = 'Hệ thống đang xử lý, vui lòng chờ…';
+    }, 3000);
+    const slowTimer = setTimeout(() => {
+      $('#loadingSubtext').textContent = 'Ứng dụng đang tải lần đầu, sẽ nhanh hơn ở lần sau…';
+    }, 8000);
+
+    // Fetch với timeout
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 18000); // 18s timeout
+
     try {
-      const res = await fetch('/api/policies');
+      const res = await fetch('/api/policies', { signal: controller.signal });
+      clearTimeout(fetchTimeout);
+      clearTimeout(progressTimer);
+      clearTimeout(slowTimer);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (!data.status || data.status !== 'ok') throw new Error(data.error || 'Data error');
@@ -279,13 +295,26 @@
       renderBanners();
       ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
       ['topuni', 'topclass', 'giasu'].forEach(c => buildCalcProductList(c));
+      hideLoading();
     } catch (err) {
+      clearTimeout(fetchTimeout);
+      clearTimeout(progressTimer);
+      clearTimeout(slowTimer);
       console.error('Load failed:', err);
-      showLoading('❌ Lỗi tải dữ liệu', err.message);
-      setTimeout(hideLoading, 4000);
-      return;
+      showLoading('❌ Lỗi tải dữ liệu', err.name === 'AbortError' ? 'Kết nối quá chậm, vui lòng thử lại' : err.message);
+      // Show retry button
+      const card = document.querySelector('#loadingOverlay .loading-card');
+      if (!card) return;
+      const existBtn = card.querySelector('.retry-btn');
+      if (!existBtn) {
+        const btn = document.createElement('button');
+        btn.className = 'retry-btn';
+        btn.textContent = '🔄 Thử lại';
+        btn.style.cssText = 'margin-top:12px;padding:8px 24px;border:none;border-radius:8px;background:#2563EB;color:#fff;font-size:14px;cursor:pointer;';
+        btn.onclick = () => { hideLoading(); loadData(); };
+        card.appendChild(btn);
+      }
     }
-    hideLoading();
   }
 
   // ─── BANNER ─────────────────────────────────────────────────────────
