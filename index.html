@@ -223,9 +223,9 @@
     const overlay = $('#loadingOverlay');
     if (text) $('#loadingText').textContent = text;
     if (sub) $('#loadingSubtext').textContent = sub;
-    overlay.classList.add('show');
+    overlay.classList.remove('hidden');
   }
-  function hideLoading() { $('#loadingOverlay').classList.remove('show'); }
+  function hideLoading() { $('#loadingOverlay').classList.add('hidden'); }
 
   // ─── LOGIN ────────────────────────────────────────────────────────
   function doLogin() {
