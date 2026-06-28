@@ -621,6 +621,12 @@ function showRoleInfo() {
 |----------|---------|
 | Tối ưu mobile responsive | 🟢 Thấp |
 
+### ĐÃ HOÀN THÀNH GẦN ĐÂY ✅
+
+| Hạng mục | Ngày | Ghi chú |
+|----------|------|---------|
+| **Gửi mail tự động thông báo ưu đãi** | 28/06/2026 | 2 cron jobs: 22h30 notify Telegram + 00h25 send. Mail từ thaonp@hocmai.vn. Đầu tháng mail mới, ngày vàng reply. Duyệt qua Telegram "GỬI MAIL". |
+
 ### LOGIC TOPUNI — TỔNG KẾT
 
 ```
@@ -640,6 +646,81 @@ Combo (thứ tự ưu tiên):
 | **Gia sư lookup** | KH mới + KH cũ + Mọi KH | Chỉ Mọi KH (mã cart) |
 | **Calculator** | Chọn KH mới/cũ | Mặc định KH mới, ẩn selector |
 | **Gia sư calc code** | `code` field | `code` field (cart) |
+
+---
+
+## 16. 📧 Email tự động thông báo chương trình ưu đãi
+
+### 16.1 Mục tiêu
+Tự động gửi email thông báo chương trình ưu đãi đến TVV và Đại sứ vào các mốc:
+- **Ngày đầu tiên của tháng** (mùng 1 hàng tháng)
+- **Ngày vàng** (khi có đợt khuyến mại ngày vàng đang hiệu lực)
+
+### 16.2 Dịch vụ email
+- **Gmail** — tài khoản HOCMAI
+- Gửi qua Google Apps Script (GmailApp.sendEmail) hoặc Nodemailer + App Password
+
+### 16.3 Nguồn dữ liệu
+Tất cả nằm trong sheet **"Lịch ngày vàng"** (cùng bộ sheet HOCMAI):
+| Thành phần | Vị trí |
+|-----------|--------|
+| Nội dung email TVV | Sheet "Lịch ngày vàng" |
+| Nội dung email Đại sứ | Sheet "Lịch ngày vàng" |
+| Danh sách người nhận TVV | Sheet "Lịch ngày vàng" |
+| Danh sách người nhận Đại sứ | Sheet "Lịch ngày vàng" |
+
+### 16.4 Quy tắc gửi mail
+
+| Mốc | Cách gửi |
+|-----|---------|
+| **Mùng 1 đầu tháng** | Gửi mail **MỚI** — title mới, nội dung mới |
+| **Ngày vàng trong tháng** | **REPLY** vào mail mùng 1 của tháng đó — giữ nguyên thread, không tạo mail mới |
+
+### 16.5 Hai mail riêng biệt
+- **Mail cho TVV** — gửi đến danh sách TVV, nội dung riêng
+- **Mail cho Đại sứ** — gửi đến danh sách Đại sứ, nội dung riêng
+
+### 16.6 Quy trình duyệt trước khi gửi (BẮT BUỘC)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  LÚC 21:59 (2 tiếng trước giờ gửi)                       │
+│  → Hệ thống gửi thông báo qua TELEGRAM cho chị            │
+│  → Kèm nội dung mail sắp gửi (tiêu đề + body)            │
+│  → Chị review, có thể yêu cầu sửa                         │
+│                                                          │
+│  CHỊ CONFIRM → Gửi mail lúc 23:59                        │
+│  CHỊ KHÔNG CONFIRM / TỪ CHỐI → HỦY, không gửi            │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 16.7 Triggers & thời gian
+
+| Trigger | Giờ thông báo chị (Telegram) | Giờ gửi mail | Ghi chú |
+|---------|---------------------------|-------------|---------|
+| **Đầu tháng** | 21:59 ngày cuối tháng trước | 23:59 ngày cuối tháng trước | Mail đến trước 0h ngày mùng 1 |
+| **Ngày vàng** | 21:59 ngày hôm trước | 23:59 ngày hôm trước | Mail đến trước 0h ngày vàng |
+| **Ngày thường** | 21:59 ngày hôm trước | 23:59 ngày hôm trước | Mail đến trước 0h ngày áp dụng |
+
+> **Gửi mail đi từ:** thaonp@hocmai.vn
+> **Danh sách nhận:** lấy từ sheet "Lịch ngày vàng"
+> **Kênh confirm:** Telegram
+
+### 16.8 Phương án kỹ thuật
+| Phương án | Ưu điểm | Nhược điểm |
+|-----------|---------|------------|
+| **A. Google Apps Script cron** | Miễn phí, tích hợp sẵn Gmail + Sheet | Giới hạn 100 mail/ngày (Gmail free) |
+| **B. Hermes cron job + Nodemailer** | Tận dụng Hermes sẵn có, linh hoạt, dễ kiểm soát logic duyệt | Cần App Password |
+| **C. Vercel Cron Jobs + Gmail API** | Mạnh, không giới hạn | Cần OAuth2 token |
+
+### 16.9 Các bước triển khai
+1. Đọc cấu trúc sheet "Lịch ngày vàng" → xác định cột nội dung + danh sách nhận
+2. Chọn phương án kỹ thuật (B — Hermes cron job được đề xuất vì dễ kiểm soát logic duyệt)
+3. Viết script: đọc sheet → soạn mail → gửi thông báo cho chị trước 120 phút
+4. Chị duyệt → gửi (hoặc hủy)
+5. Test gửi thử → kích hoạt tự động
+
+---
 
 ### LINK
 
