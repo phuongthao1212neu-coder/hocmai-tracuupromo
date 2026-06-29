@@ -23,6 +23,7 @@
 <!-- ═══════ LOGIN PAGE ═══════ -->
 <div class="login-page" id="loginPage">
   <div class="login-card">
+    <div class="login-brand">HOCMAI</div>
     <img src="assets/logo.png" alt="HOCMAI" class="login-logo">
     <div class="login-title">Tra cứu chương trình Khuyến học</div>
     <div class="login-subtitle">Đăng nhập để truy cập hệ thống ưu đãi</div>
@@ -166,6 +167,16 @@
               <div class="calc-count" id="prodCountTopclass">0 sản phẩm</div>
               <div class="calc-search">
                 <input type="text" class="calc-search-input" data-cat="topclass" placeholder="🔍 Tìm sản phẩm...">
+              </div>
+            </div>
+            <div class="calc-filter-row" id="filterRowTopclass">
+              <div class="multi-select" id="multiGrade">
+                <button class="multi-select-btn" id="btnMultiGrade">Lớp ▾</button>
+                <div class="multi-select-drop" id="dropMultiGrade"></div>
+              </div>
+              <div class="multi-select" id="multiSubject">
+                <button class="multi-select-btn" id="btnMultiSubject">Môn ▾</button>
+                <div class="multi-select-drop" id="dropMultiSubject"></div>
               </div>
             </div>
             <div class="cust-type-selector" id="custTypeTopclass">
@@ -319,6 +330,18 @@
       document.body.classList.remove('role-ds');
       $('#roleBadge .badge-icon').textContent = '💼';
     }
+    // Reset về tab mặc định: Tra cứu ưu đãi + Topuni
+    $$('.tab-btn').forEach(b => b.classList.remove('active'));
+    $('#tabLookup').classList.add('active');
+    $$('.panel').forEach(p => p.classList.remove('active'));
+    $('#panelLookup').classList.add('active');
+    ['#catTabsLookup', '#catTabsCalc'].forEach(sel => {
+      $$(sel + ' .cat-tab').forEach(b => b.classList.remove('active'));
+      $(sel + ' .cat-tab[data-cat="topuni"]').classList.add('active');
+    });
+    $$('#panelLookup .cat-panel, #panelCalc .cat-panel').forEach(p => p.classList.remove('active'));
+    $('#panelLookup .cat-panel[data-catpanel="topuni"]').classList.add('active');
+    $('#panelCalc .cat-panel[data-catpanel="topuni"]').classList.add('active');
     loadData();
   }
   function doLogout() {
@@ -331,6 +354,22 @@
     $('#username').value = '';
     $('#password').value = '';
     $('#loginError').textContent = '';
+    // Clear cart & filter state
+    SEARCH_QUERY = '';
+    CALC_FILTERS = { topuni: '', topclass: '', giasu: '' };
+    CALC_ADV_FILTERS.topclass.grades = [];
+    CALC_ADV_FILTERS.topclass.subjects = [];
+    ['topuni', 'topclass', 'giasu'].forEach(cat => {
+      const cap = cat.charAt(0).toUpperCase() + cat.slice(1);
+      const list = document.getElementById('prodList' + cap);
+      if (list) list.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.dispatchEvent(new Event('change')); });
+      const btnCalc = document.getElementById('btnCalc' + cap);
+      if (btnCalc) btnCalc.disabled = true;
+      const result = document.getElementById('calcResult' + cap);
+      if (result) result.innerHTML = '<div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>';
+      const custRadios = document.querySelectorAll('input[name="custType' + cap + '"]');
+      custRadios.forEach(r => r.checked = false);
+    });
   }
 
   // ─── DATA ─────────────────────────────────────────────────────────
@@ -556,7 +595,8 @@
       }
     }
 
-    let html = '<table class="promo-table"><thead>';
+    const hasGolden = periods.some(p => (p.type || 'unknown') === 'golden');
+    let html = '<table class="promo-table' + (hasGolden ? ' has-golden' : ' no-golden') + '"><thead>';
 
     // Row 1: fixed cols + period headers
     html += '<tr>';
@@ -638,6 +678,7 @@
 
   // ─── CALC SEARCH ──────────────────────────────────────────────────
   let CALC_FILTERS = { topuni: '', topclass: '', giasu: '' };
+  const CALC_ADV_FILTERS = { topclass: { grades: [], subjects: [] } };
 
   function getCalcCatalog(cat) {
     return (APP_DATA.catalogs || {})[cat] || [];
@@ -667,16 +708,43 @@
 
     list.innerHTML = '';
     let visibleCount = 0;
+    // Collect ALL unique grades & subjects from FULL catalog (not filtered)
+    const grades = new Set();
+    const subjects = new Set();
+    if (cat === 'topclass') {
+      for (let i = 0; i < fullCatalog.length; i++) {
+        const item = fullCatalog[i];
+        const name = getCalcProductName(cat, item);
+        const grade = extractGrade(item, name);
+        const subject = (item.subject || '').toLowerCase();
+        if (grade) grades.add(grade);
+        if (subject) subjects.add(subject);
+      }
+    }
     for (let i = 0; i < fullCatalog.length; i++) {
       const item = fullCatalog[i];
       const name = getCalcProductName(cat, item);
       const sub = getCalcProductSub(cat, item);
       const q = (CALC_FILTERS[cat] || '').toLowerCase().trim();
       if (q && !name.toLowerCase().includes(q) && !sub.toLowerCase().includes(q)) continue;
+      // Topclass advanced filters (multi-select)
+      if (cat === 'topclass') {
+        const adv = CALC_ADV_FILTERS.topclass;
+        const grade = extractGrade(item, name);
+        const subject = (item.subject || '').toLowerCase();
+        if (adv.grades.length && !adv.grades.includes(grade)) continue;
+        if (adv.subjects.length && !adv.subjects.includes(subject)) continue;
+      }
       visibleCount++;
       const price = item.listPrice || item.totalListPrice || 0;
       const li = document.createElement('li');
       li.className = 'product-item';
+      if (cat === 'topclass') {
+        const grade = extractGrade(item, name);
+        const subject = item.subject || '';
+        li.setAttribute('data-grade', grade);
+        li.setAttribute('data-subject', subject);
+      }
       li.innerHTML = `
         <input type="checkbox" data-idx="${i}" id="calc_${cat}_${i}" ${custType ? '' : 'disabled'}>
         <div class="product-info">
@@ -686,6 +754,7 @@
         <div class="product-price">${formatPrice(price)}</div>`;
       li.addEventListener('click', (e) => {
         if (e.target.tagName === 'INPUT') return;
+        if (e.target.tagName === 'LABEL') return;
         const cb = li.querySelector('input[type="checkbox"]');
         if (cb.disabled) return;
         cb.checked = !cb.checked;
@@ -698,6 +767,48 @@
       list.appendChild(li);
     }
     countEl.textContent = visibleCount + '/' + fullCatalog.length + ' sản phẩm';
+    // Populate filter dropdowns for Topclass
+    if (cat === 'topclass') populateTopclassDropdowns(grades, subjects);
+  }
+
+  function extractGrade(item, name) {
+    if (item.gradeLevel) return String(item.gradeLevel);
+    const m = (name || '').match(/\b(\d{1,2})\b/);
+    return m ? m[1] : '';
+  }
+
+  function populateTopclassDropdowns(grades, subjects) {
+    const dropGrade = $('#dropMultiGrade');
+    const dropSubject = $('#dropMultiSubject');
+    if (!dropGrade || !dropSubject) return;
+    const adv = CALC_ADV_FILTERS.topclass;
+    // Grade checkboxes
+    dropGrade.innerHTML = '';
+    [...grades].sort((a,b) => parseInt(a)-parseInt(b)).forEach(g => {
+      const checked = adv.grades.includes(g) ? 'checked' : '';
+      dropGrade.innerHTML += '<label class="multi-select-opt"><input type="checkbox" value="' + g + '" data-type="grade" ' + checked + '> Lớp ' + g + '</label>';
+    });
+    // Subject checkboxes (normalized)
+    const normalized = new Map();
+    [...subjects].sort().forEach(s => {
+      const key = s.toLowerCase();
+      if (!normalized.has(key)) normalized.set(key, s);
+    });
+    dropSubject.innerHTML = '';
+    normalized.forEach((displayVal, key) => {
+      const checked = adv.subjects.includes(key) ? 'checked' : '';
+      const display = displayVal.charAt(0).toUpperCase() + displayVal.slice(1);
+      dropSubject.innerHTML += '<label class="multi-select-opt"><input type="checkbox" value="' + key + '" data-type="subject" ' + checked + '> ' + display + '</label>';
+    });
+    updateMultiSelectLabels();
+  }
+
+  function updateMultiSelectLabels() {
+    const adv = CALC_ADV_FILTERS.topclass;
+    const btnG = $('#btnMultiGrade');
+    const btnS = $('#btnMultiSubject');
+    if (btnG) btnG.textContent = adv.grades.length ? 'Lớp (' + adv.grades.length + ') ▾' : 'Lớp ▾';
+    if (btnS) btnS.textContent = adv.subjects.length ? 'Môn (' + adv.subjects.length + ') ▾' : 'Môn ▾';
   }
 
   function getCalcProductName(cat, item) {
@@ -1343,6 +1454,49 @@
         CALC_FILTERS[cat] = e.target.value;
         renderCalcProductList(cat);
       });
+    });
+
+    // Topclass multi-select dropdowns
+    const btnGrade = $('#btnMultiGrade');
+    const btnSubject = $('#btnMultiSubject');
+    const dropGrade = $('#dropMultiGrade');
+    const dropSubject = $('#dropMultiSubject');
+    if (btnGrade) btnGrade.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropGrade.classList.toggle('open');
+      dropSubject.classList.remove('open');
+    });
+    if (btnSubject) btnSubject.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropSubject.classList.toggle('open');
+      dropGrade.classList.remove('open');
+    });
+    // Checkbox changes inside dropdowns
+    $('#filterRowTopclass').addEventListener('change', (e) => {
+      if (!e.target.matches('.multi-select-opt input[type="checkbox"]')) return;
+      const adv = CALC_ADV_FILTERS.topclass;
+      const val = e.target.value;
+      // Determine array before DOM is replaced
+      const isGrade = e.target.dataset.type === 'grade';
+      const arr = isGrade ? adv.grades : adv.subjects;
+      const idx = arr.indexOf(val);
+      if (e.target.checked) { if (idx < 0) arr.push(val); }
+      else { if (idx >= 0) arr.splice(idx, 1); }
+      // Save open state before re-render
+      const gradeOpen = dropGrade.classList.contains('open');
+      const subjectOpen = dropSubject.classList.contains('open');
+      updateMultiSelectLabels();
+      renderCalcProductList('topclass');
+      // Restore open state after re-render
+      if (gradeOpen) $('#dropMultiGrade').classList.add('open');
+      if (subjectOpen) $('#dropMultiSubject').classList.add('open');
+    });
+    // Click outside closes dropdowns
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.multi-select')) {
+        dropGrade.classList.remove('open');
+        dropSubject.classList.remove('open');
+      }
     });
 
     // Calc custType radio buttons — re-enable/disable checkboxes

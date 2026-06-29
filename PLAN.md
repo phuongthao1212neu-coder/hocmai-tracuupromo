@@ -726,3 +726,32 @@ Tất cả nằm trong sheet **"Lịch ngày vàng"** (cùng bộ sheet HOCMAI):
 
 - **Production:** https://hocmai-tracuupromo.vercel.app/
 - **GitHub:** phuongthao1212neu-coder/hocmai-tracuupromo
+
+---
+
+## 17. Changelog
+
+### 28/06/2026 — Phiên bản hiện tại
+
+**Sửa lỗi:**
+
+| # | Lỗi | Nguyên nhân | Fix |
+|---|---|---|---|
+| 1 | Mobile: tap vào tên sản phẩm không check được | Label `for="..."` + JS handler toggle 2 lần → checkbox không đổi | Thêm `if (e.target.tagName === 'LABEL') return;` trong click handler của `<li>` |
+| 2 | Login lại không reset về Tra cứu ưu đãi + Topuni | `enterApp()` không reset tab state | Thêm code reset tất cả tab về mặc định trong `enterApp()` |
+| 3 | Logout rồi login lại vẫn lưu sản phẩm đã chọn | `doLogout()` dùng sai ID (cart/res thay vì calcResult/btnCalc/prodList) | Sửa đúng ID, thêm clear custType radio + dispatchEvent 'change' |
+| 4 | Mobile: nút Tính học phí nằm cuối danh sách, phải kéo rất xa | Calc-actions nằm dưới calc-left (danh sách dài) | CSS: `.cat-panel.active .calc-actions` → `position:fixed; bottom:0;` trên mobile (≤768px). Chỉ CSS, không đụng HTML/JS |
+
+**Tính năng mới:**
+
+| # | Tính năng | Mô tả |
+|---|---|---|
+| 5 | Bộ lọc Lớp + Môn cho Topclass | 2 dropdown multi-select (checkbox) ngay trên danh sách sản phẩm tab Topclass. Chọn nhiều lớp, nhiều môn cùng lúc. Filter thuần client, không ảnh hưởng API/logic. |
+| 6 | Branding HOCMAI trang đăng nhập | Thêm text "HOCMAI" gradient xanh lớn phía trên logo. |
+
+**Ghi chú kỹ thuật:**
+- **Cache dữ liệu:** API `/api/policies` cache 2 phút (120s) từ Google Apps Script + CDN Vercel. Khi sửa Google Sheet → cần F5 hoặc đợi 2 phút để thấy dữ liệu mới.
+- **Phiên đăng nhập:** Dùng `sessionStorage`. Tồn tại đến khi đóng **tất cả tab** của browser. Auto-login khi mở lại trang nếu session còn.
+- **Deploy:** Vercel CLI từ `D:\HOCMAI\Tracuupromo`, lệnh: `npx vercel --prod --yes`
+- **File nguồn:** `index.html` + `styles.css` trong `D:\HOCMAI\Tracuupromo`
+- **Bộ lọc Topclass:** Dùng `CALC_ADV_FILTERS.topclass = { grades: [], subjects: [] }`. Dropdown multi-select với checkbox, data-type để phân biệt grade/subject, giữ dropdown mở khi chọn. Grades/subjects được extract từ toàn bộ catalog (không bị thu hẹp khi filter).
