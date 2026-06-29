@@ -657,10 +657,8 @@ body {
 /* Result table new columns */
 .result-table .price-discount { font-weight: 700; color: var(--hm-orange); font-size: 12px; }
 .result-table .combo-row { background: linear-gradient(90deg, #FFF7ED, #FFF); }
-.result-table .combo-row + .combo-row { background: linear-gradient(90deg, #FFF7ED, #FFF); }
-.result-table .combo-row + .combo-row td { border-top: none; }
-.result-table .combo-row td.merged-cell { border-bottom: none; }
 .result-table .combo-row:hover td { background: linear-gradient(90deg, #FFEDD5, #F8FAFC); }
+.result-table .col-delete { width: 44px; text-align: center; }
 .combo-tag {
   display: inline-block;
   font-size: 10px;
