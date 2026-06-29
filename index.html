@@ -1267,14 +1267,17 @@
         html += '<td class="price-original">' + formatPrice(subPrice) + '</td>';
 
         if (isMultiItem && !isLastSub) {
-          // Non-last sub-row: cells 3-6 covered by rowspan from last row — skip them
+          // Non-last sub-row: keep cells but hide content, borderless for visual merge
+          html += '<td class="merged-cell"></td>';
+          html += '<td class="merged-cell"></td>';
+          html += '<td class="merged-cell"></td>';
+          html += '<td class="merged-cell"></td>';
         } else {
-          // Last sub-row (or single row): show promo info with rowspan if combo
-          var rs = isMultiItem ? ' rowspan="' + nItems + '"' : '';
-          html += '<td class="price-discount"' + rs + '>' + formatDiscountLabel(r.discount) + '</td>';
-          html += '<td class="price-final"' + rs + '>' + formatPrice(r.finalPrice) + '</td>';
-          html += '<td class="price-save"' + rs + '>' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
-          html += '<td' + rs + '>';
+          // Last sub-row (or single row): show promo info
+          html += '<td class="price-discount">' + formatDiscountLabel(r.discount) + '</td>';
+          html += '<td class="price-final">' + formatPrice(r.finalPrice) + '</td>';
+          html += '<td class="price-save">' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
+          html += '<td>';
           if (r.code !== '—') {
             html += '<span class="tu-code-badge">' + r.code + '</span> ';
             html += '<button class="copy-icon" title="Sao chép" onclick="copyText(\'' + r.code.replace(/'/g, "\\'") + '\', this)">📋</button>';
