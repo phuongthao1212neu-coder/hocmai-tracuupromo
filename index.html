@@ -1179,7 +1179,7 @@
       }
     }
 
-    // Convert matchedResults to rows
+    // Convert matchedResults to rows — merge items sharing same promo code
     var rows = [];
     for (var r = 0; r < matchedResults.length; r++) {
       var mr = matchedResults[r];
@@ -1190,25 +1190,34 @@
       var savings = discount != null ? (listPrice - finalPrice) : 0;
       var isGolden = mr.promo ? (mr.promo.periodName || '').toLowerCase().indexOf('ngày vàng') >= 0 : false;
 
-      var name = mr.comboName || mr.groupLabel || mr.items[0].name || mr.items[0].packageName || 'Sản phẩm';
-
       if (mr.isCombo) {
         finalPrice = mr.finalPrice != null ? mr.finalPrice : finalPrice;
         savings = mr.savings != null ? mr.savings : savings;
       }
 
-      rows.push({
-        name: name,
-        items: mr.items,
-        listPrice: listPrice,
-        discount: discount,
-        finalPrice: finalPrice,
-        savings: savings,
-        code: code,
-        isCombo: mr.isCombo,
-        isGolden: isGolden,
-        periodName: mr.promo ? mr.promo.periodName : null
-      });
+      // Try to merge with previous row if same promo code (Topuni individual items sharing combo)
+      var prevRow = rows.length > 0 ? rows[rows.length - 1] : null;
+      if (prevRow && prevRow.code === code && code !== '—' && prevRow.discount === discount && prevRow.items) {
+        prevRow.items = prevRow.items.concat(mr.items);
+        prevRow.listPrice += listPrice;
+        prevRow.finalPrice += finalPrice;
+        prevRow.savings += savings;
+        prevRow.isCombo = true;
+      } else {
+        var name = mr.comboName || mr.groupLabel || (mr.items.length === 1 ? (mr.items[0].name || mr.items[0].packageName || 'Sản phẩm') : 'Nhóm sản phẩm');
+        rows.push({
+          name: name,
+          items: mr.items.slice(),
+          listPrice: listPrice,
+          discount: discount,
+          finalPrice: finalPrice,
+          savings: savings,
+          code: code,
+          isCombo: mr.isCombo || false,
+          isGolden: isGolden,
+          periodName: mr.promo ? mr.promo.periodName : null
+        });
+      }
     }
 
     renderCalcResult(cat, rows, codeLabel, custType, periodType);
@@ -1240,32 +1249,46 @@
       totalFinal += r.finalPrice;
       totalSave += r.savings;
 
-      // Compute catalog indices for this row's items
-      var itemIdxs = [];
-      for (var j = 0; j < r.items.length; j++) {
-        var catIdx = catalog.indexOf(r.items[j]);
-        if (catIdx >= 0) itemIdxs.push(catIdx);
-      }
-      var idxsAttr = itemIdxs.join(',');
+      var isMultiItem = r.isCombo && r.items && r.items.length > 1;
+      var nItems = isMultiItem ? r.items.length : 1;
 
-      html += '<tr class="' + (r.isGolden ? 'golden-row' : '') + (r.isCombo ? ' combo-row' : '') + '" data-idxs="' + idxsAttr + '">';
-      html += '<td style="text-align:left;font-weight:600">';
-      if (r.isCombo) html += '<span class="combo-tag">COMBO</span> ';
-      html += r.name + '</td>';
-      html += '<td class="price-original">' + formatPrice(r.listPrice) + '</td>';
-      html += '<td class="price-discount">' + formatDiscountLabel(r.discount) + '</td>';
-      html += '<td class="price-final">' + formatPrice(r.finalPrice) + '</td>';
-      html += '<td class="price-save">' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
-      html += '<td>';
-      if (r.code !== '—') {
-        html += '<span class="tu-code-badge">' + r.code + '</span> ';
-        html += '<button class="copy-icon" title="Sao chép" onclick="copyText(\'' + r.code.replace(/\'/g, "\\'") + '\', this)">📋</button>';
-      } else {
-        html += '—';
+      for (var si = 0; si < nItems; si++) {
+        var subItem = isMultiItem ? r.items[si] : r.items[0];
+        var subPrice = isMultiItem ? (subItem.listPrice || subItem.totalListPrice || 0) : r.listPrice;
+        var subName = subItem.name || subItem.packageName || 'Sản phẩm';
+        var isLastSub = (si === nItems - 1);
+
+        // Compute catalog index for this single item
+        var catIdx = catalog.indexOf(subItem);
+        var idxsAttr = catIdx >= 0 ? String(catIdx) : '';
+
+        html += '<tr class="' + (r.isGolden ? 'golden-row' : '') + (isMultiItem ? ' combo-row' : '') + '" data-idxs="' + idxsAttr + '" data-cat="' + cat + '">';
+        html += '<td style="text-align:left;font-weight:600">' + subName + '</td>';
+        html += '<td class="price-original">' + formatPrice(subPrice) + '</td>';
+
+        if (isMultiItem && !isLastSub) {
+          // Non-last sub-row: empty cells for merged columns
+          html += '<td class="merged-cell"></td>';
+          html += '<td class="merged-cell"></td>';
+          html += '<td class="merged-cell"></td>';
+          html += '<td class="merged-cell"></td>';
+        } else {
+          // Last sub-row (or single row): show promo info
+          html += '<td class="price-discount">' + formatDiscountLabel(r.discount) + '</td>';
+          html += '<td class="price-final">' + formatPrice(r.finalPrice) + '</td>';
+          html += '<td class="price-save">' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
+          html += '<td>';
+          if (r.code !== '—') {
+            html += '<span class="tu-code-badge">' + r.code + '</span> ';
+            html += '<button class="copy-icon" title="Sao chép" onclick="copyText(\'' + r.code.replace(/'/g, "\\'") + '\', this)">📋</button>';
+          } else {
+            html += '—';
+          }
+          html += '</td>';
+        }
+        html += '<td><button class="btn-remove-row" title="Bỏ chọn">✕</button></td>';
+        html += '</tr>';
       }
-      html += '</td>';
-      html += '<td><button class="btn-remove-row" title="Bỏ chọn">✕</button></td>';
-      html += '</tr>';
     }
 
     html += '</tbody></table></div>';
@@ -1279,7 +1302,7 @@
 
     container.innerHTML = html;
 
-    // Gắn trực tiếp event listener cho từng nút xoá (không onclick, không delegation)
+    // Gắn trực tiếp event listener cho từng nút xoá: xoá 1 SP → tính lại
     var deleteBtns = container.querySelectorAll('.btn-remove-row');
     for (var d = 0; d < deleteBtns.length; d++) {
       deleteBtns[d].addEventListener('click', function(e) {
@@ -1290,26 +1313,23 @@
         if (!row) return;
 
         var idxsAttr = row.getAttribute('data-idxs') || '';
-        var idxs = idxsAttr.split(',').filter(function(s) { return s !== ''; });
+        var rowCat = row.getAttribute('data-cat') || cat;
+        var idx = parseInt(idxsAttr, 10);
+        if (isNaN(idx)) return;
 
-        var panelId = 'calcPanel' + cat.charAt(0).toUpperCase() + cat.slice(1);
+        var panelId = 'calcPanel' + rowCat.charAt(0).toUpperCase() + rowCat.slice(1);
 
-        for (var j = 0; j < idxs.length; j++) {
-          var cb = document.querySelector('#' + panelId + ' input[data-idx="' + idxs[j] + '"]');
-          if (cb) {
-            cb.checked = false;
-            var li = cb.closest('.product-item');
-            if (li) li.classList.remove('selected');
-            cb.dispatchEvent(new Event('change'));
-          }
+        // Uncheck this one checkbox
+        var cb = document.querySelector('#' + panelId + ' input[data-idx="' + idx + '"]');
+        if (cb) {
+          cb.checked = false;
+          var li = cb.closest('.product-item');
+          if (li) li.classList.remove('selected');
+          cb.dispatchEvent(new Event('change'));
         }
 
-        row.remove();
-
-        var remainingRows = container.querySelectorAll('.result-table tbody tr');
-        if (remainingRows.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>';
-        }
+        // Recalculate to re-evaluate combos
+        calculateFee(rowCat);
       });
     }
   }
