@@ -327,6 +327,11 @@ function matchGiasuCatalog(cat, pro) {
   const sess = parseSessionsFromName(cat.name);
   if (!sess || !pro.sessions) return false;
   if (sess !== Number(pro.sessions)) return false;
+  // Phải match cả tên gói để tránh nhầm giữa các gói cùng giá & số buổi
+  // (VD: "Gia sư nâng cao" vs "Vui học level 2" đều 260k/buổi)
+  const catName = (cat.name || '').toLowerCase();
+  const proName = (pro.name || '').toLowerCase();
+  if (!catName.includes(proName)) return false;
   return Number(cat.listPrice) > 0 && Number(cat.listPrice) === Number(pro.totalListPrice);
 }
 

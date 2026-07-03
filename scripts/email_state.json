@@ -1,1 +1,17 @@
-{}
+{
+  "pending": {
+    "date": "2026-07-01",
+    "is_first_of_month": true,
+    "is_golden": false,
+    "notifications": [
+      {
+        "doi_tuong": "ADC",
+        "list_email": "thaonp@hocmai.vn",
+        "subject": "[HOCMAI] Thông báo chương trình ưu đãi — ADC",
+        "body": "\"Title email: [HOCMAI] Chương trình khuyến học tháng \"\"07/2026\"\"\n\nNội dung:\nDear anh/chị/em,\n\nHOCMAI gửi anh/chị/em thông tin Chương trình khuyến học tháng 07/2026 tại đường link:\n\nhttps://hocmai-tracuupromo.vercel.app/\n\nAnh/chị/em vui lòng chọn vai trò Đại sứ để đăng nhập và theo dõi thông tin chương trình ưu đãi.\n\nThanks & Best regards,\"",
+        "mail_type": "MAIL MỚI (đầu tháng)"
+      }
+    ],
+    "notified_at": "2026-06-30T22:39:11.110121"
+  }
+}

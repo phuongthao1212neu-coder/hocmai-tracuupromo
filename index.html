@@ -505,7 +505,7 @@
     return ctype || '—';
   }
 
-  function renderPromoCell(data, codeField, codeLabel, pType, ctype) {
+  function renderPromoCell(data, codeField, codeLabel, pType, ctype, cat) {
     if (!data || (data.discount == null && !data[codeField] && data.finalPrice == null)) {
       return '<td class="promo-cell empty-cell">—</td>';
     }
@@ -529,7 +529,13 @@
       priceHtml = `<div class="${cls}">HP: ${formatPrice(data.finalPrice)}</div>`;
     }
 
-    const code = (ctype === 'all') ? (data.code || data.amsCode) : data[codeField];
+    // Gia sư: DS role dùng code, TVV role dùng codeField
+    let code = null;
+    if (cat === 'giasu' && ROLE === 'ds') {
+      code = data.code;
+    } else {
+      code = data[codeField];
+    }
     if (code) {
       codeHtml = `
         <div class="tu-code-row">
@@ -575,9 +581,9 @@
     const periodColumns = [];
     for (const p of periods) {
       const pType = p.type || 'unknown';
-      // DS role Gia sư: CHỈ hiện cột "Mọi KH" (all), bỏ KH mới/KH cũ/upgrade
+      // DS role Gia sư: CHỈ hiện cột "KH mới" (new), thay vì Mọi KH
       if (ROLE === 'ds' && cat === 'giasu') {
-        periodColumns.push({ period: p, cust: { type: 'all' }, pType, ctype: 'all', ctypeLabel: 'Mọi KH' });
+        periodColumns.push({ period: p, cust: { type: 'new' }, pType, ctype: 'new', ctypeLabel: 'KH mới' });
       } else {
         const custs = p.custs || [];
         for (const c of custs) {
@@ -585,13 +591,13 @@
           const ctypeLabel = getCustLabel(ctype);
           periodColumns.push({ period: p, cust: c, pType, ctype, ctypeLabel });
         }
-        // TVV Gia sư: thêm cột Mọi KH (all) nếu chưa có
-        if (cat === 'giasu') {
-          var hasAll = custs.some(function(c) { return c.type === 'all'; });
-          if (!hasAll) {
-            periodColumns.push({ period: p, cust: { type: 'all' }, pType, ctype: 'all', ctypeLabel: 'Mọi KH' });
-          }
-        }
+        // TVV Gia sư: BỎ thêm cột Mọi KH (all)
+        // if (cat === 'giasu') {
+        //   var hasAll = custs.some(function(c) { return c.type === 'all'; });
+        //   if (!hasAll) {
+        //     periodColumns.push({ period: p, cust: { type: 'all' }, pType, ctype: 'all', ctypeLabel: 'Mọi KH' });
+        //   }
+        // }
       }
     }
 
@@ -608,13 +614,13 @@
     for (const p of periods) {
       const pType = p.type || 'unknown';
       let custCount = (p.custs || []).length || 1;
-      // DS role Gia sư: chỉ 1 cột Mọi KH
+      // DS role Gia sư: chỉ 1 cột KH mới
       if (ROLE === 'ds' && cat === 'giasu') custCount = 1;
-      // TVV Gia sư: +1 cho cột Mọi KH nếu chưa có trong custs
-      else if (cat === 'giasu') {
-        var hasAll2 = (p.custs || []).some(function(c) { return c.type === 'all'; });
-        if (!hasAll2) custCount = custCount + 1;
-      }
+      // TVV Gia sư: BỎ +1 cho cột Mọi KH
+      // else if (cat === 'giasu') {
+      //   var hasAll2 = (p.custs || []).some(function(c) { return c.type === 'all'; });
+      //   if (!hasAll2) custCount = custCount + 1;
+      // }
       html += `<th class="${pType === 'golden' ? 'th-golden' : 'th-normal'}" colspan="${custCount}">${cleanPeriodName(p.name)}</th>`;
     }
     html += '</tr>';
@@ -643,7 +649,7 @@
         const promos = item.promotions || {};
         const periodPromo = promos[pName] || {};
         const custPromo = periodPromo[ctype] || {};
-        html += renderPromoCell(custPromo, codeField, codeLabel, pc.pType, ctype);
+        html += renderPromoCell(custPromo, codeField, codeLabel, pc.pType, ctype, cat);
       }
       html += '</tr>';
     }
