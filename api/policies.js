@@ -331,7 +331,15 @@ function matchGiasuCatalog(cat, pro) {
   // (VD: "Gia sư nâng cao" vs "Vui học level 2" đều 260k/buổi)
   const catName = (cat.name || '').toLowerCase();
   const proName = (pro.name || '').toLowerCase();
-  if (!catName.includes(proName)) return false;
+  // Token-based match: từng từ trong proName phải xuất hiện theo thứ tự trong catName
+  // (cho phép có từ xen giữa, VD: "Vui học Tiếng Anh level 1" match "Vui học level 1")
+  const proTokens = proName.split(/\s+/);
+  let pos = 0;
+  for (const token of proTokens) {
+    pos = catName.indexOf(token, pos);
+    if (pos === -1) return false;
+    pos += token.length;
+  }
   return Number(cat.listPrice) > 0 && Number(cat.listPrice) === Number(pro.totalListPrice);
 }
 
