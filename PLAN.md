@@ -731,7 +731,15 @@ Tất cả nằm trong sheet **"Lịch ngày vàng"** (cùng bộ sheet HOCMAI):
 
 ## 17. Changelog
 
-### 28/06/2026 — Phiên bản hiện tại
+### 03/07/2026
+
+**Sửa lỗi:**
+
+| # | Lỗi | Nguyên nhân | Fix |
+|---|---|---|---|
+| 5 | Gia sư: sản phẩm Vui học (level 1 & 2) không có ưu đãi/mã trong Tính học phí | `matchGiasuCatalog` dùng `catName.includes(proName)` — tên catalog `"Vui học Tiếng Anh level 1 - 10 buổi"` không chứa tên promo `"Vui học level 1 - 10 buổi"` (có "Tiếng Anh" xen giữa) | Chuyển sang token-based match: từng từ trong promo name phải xuất hiện theo thứ tự trong catalog name, cho phép từ xen giữa. File: `api/policies.js` |
+
+### 28/06/2026 — Phiên bản trước
 
 **Sửa lỗi:**
 
