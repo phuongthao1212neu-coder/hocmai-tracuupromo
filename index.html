@@ -96,6 +96,9 @@
       <button class="tab-btn" data-tab="calc" id="tabCalc">
         <span class="tab-icon">🧮</span> Tính học phí
       </button>
+      <button class="tab-btn" data-tab="timetable" id="tabTimetable">
+        <span class="tab-icon">📅</span> Tra cứu lịch học Livestream
+      </button>
     </div>
 
     <!-- ═══════ TAB: TRA CỨU ƯU ĐÃI ═══════ -->
@@ -231,6 +234,18 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══════ TAB: TRA CỨU LỊCH HỌC LIVESTREAM ═══════ -->
+    <div class="panel" id="panelTimetable">
+      <div class="timetable-wrap">
+        <div class="timetable-hint" id="timetableHint">
+          <span class="hint-icon">🔑</span>
+          <span id="timetableHintText"></span>
+        </div>
+        <p class="timetable-desc">Lần đầu truy cập, bạn cần đăng nhập bằng tài khoản bên trên.<br>Từ lần sau, trình duyệt sẽ tự ghi nhớ.</p>
+        <button class="btn-open-timetable" onclick="window.open('https://tra-cuu-lich-hoc.vercel.app/timetable','_blank')">🚀 Mở trang Lịch học Livestream</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -277,8 +292,8 @@
   let APP_DATA = null;
   let SEARCH_QUERY = '';
   const CREDENTIALS = {
-    tvv: { user: 'tvv', pass: 'tvv@123', codeField: 'code', codeLabel: 'Mã Cart' },
-    ds:  { user: 'adc', pass: 'adc',    codeField: 'amsCode', codeLabel: 'Mã AMS' }
+    tvv: { user: 'tvv', pass: 'tvv@123', codeField: 'code', codeLabel: 'Mã Cart', ttUser: 'tvv', ttPass: 'Hocmai@112233' },
+    ds:  { user: 'adc', pass: 'adc',    codeField: 'amsCode', codeLabel: 'Mã AMS', ttUser: 'adc', ttPass: 'adc2026' }
   };
 
   // ─── LOADING ──────────────────────────────────────────────────────
@@ -330,6 +345,9 @@
       document.body.classList.remove('role-ds');
       $('#roleBadge .badge-icon').textContent = '💼';
     }
+    // Timetable credential hint
+    const cred = CREDENTIALS[selectedRole];
+    $('#timetableHintText').textContent = 'Tài khoản: ' + cred.ttUser + ' | Mật khẩu: ' + cred.ttPass;
     // Reset về tab mặc định: Tra cứu ưu đãi + Topuni
     $$('.tab-btn').forEach(b => b.classList.remove('active'));
     $('#tabLookup').classList.add('active');
@@ -389,7 +407,11 @@
     const fetchTimeout = setTimeout(() => controller.abort(), 18000); // 18s timeout
 
     try {
-      const res = await fetch('/api/policies', { signal: controller.signal });
+      // Local dev: fallback to production API
+      const apiUrl = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+        ? 'https://hocmai-tracuupromo.vercel.app/api/policies'
+        : '/api/policies';
+      const res = await fetch(apiUrl, { signal: controller.signal });
       clearTimeout(fetchTimeout);
       clearTimeout(progressTimer);
       clearTimeout(slowTimer);
@@ -1429,16 +1451,20 @@
     $('#btnLogout').addEventListener('click', doLogout);
 
     // Main tabs
+    const TIMETABLE_URL = 'https://tra-cuu-lich-hoc.vercel.app/timetable';
     $$('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         $$('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const tab = btn.dataset.tab;
         $$('.panel').forEach(p => p.classList.remove('active'));
-        const panel = tab === 'lookup' ? $('#panelLookup') : $('#panelCalc');
-        panel.classList.add('active');
-        if (tab === 'calc') {
+        if (tab === 'lookup') {
+          $('#panelLookup').classList.add('active');
+        } else if (tab === 'calc') {
+          $('#panelCalc').classList.add('active');
           ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
+        } else if (tab === 'timetable') {
+          $('#panelTimetable').classList.add('active');
         }
       });
     });

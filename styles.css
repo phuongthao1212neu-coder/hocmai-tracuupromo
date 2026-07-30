@@ -155,6 +155,34 @@ body {
 .cat-panel { display:none; }
 .cat-panel.active { display:block; }
 
+/* ═══════ TIMETABLE PANEL ═══════ */
+#panelTimetable {
+  display: none;
+}
+#panelTimetable.active { display:block; }
+.timetable-wrap {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:16px; padding:60px 24px; text-align:center;
+  background:#fff; border:1px solid #E2E8F0; border-radius:12px;
+}
+.timetable-hint {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:12px 24px;
+  background:#EFF6FF; border:1px solid #BFDBFE;
+  border-radius:10px; font-size:15px; font-weight:600; color:#1E40AF;
+}
+.timetable-hint .hint-icon { font-size:20px; }
+.timetable-desc {
+  margin:0; font-size:14px; color:#64748B; max-width:420px;
+}
+.btn-open-timetable {
+  padding:12px 28px; border:none; border-radius:10px;
+  background:linear-gradient(135deg,#2563EB,#1D4ED8);
+  color:#fff; font-size:15px; font-weight:600; cursor:pointer;
+  transition:transform .15s;
+}
+.btn-open-timetable:hover { transform:scale(1.03); }
+
 /* ═══════ PROMO TABLE ═══════ */
 .table-wrapper {
   overflow:auto; border:1px solid #E8EEF6;
@@ -945,3 +973,9 @@ body {
 
 /* ─── ĐẠI SỨ: ẩn chọn loại KH ─── */
 body.role-ds .cust-type-selector { display:none; }
+
+/* ─── TIMETABLE RESPONSIVE ─── */
+@media (max-width: 480px) {
+  .timetable-wrap { padding:32px 16px; }
+  .timetable-hint { font-size:13px; padding:10px 16px; }
+}
