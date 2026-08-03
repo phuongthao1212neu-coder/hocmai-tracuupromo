@@ -8,6 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* TEST: Topuni thêm cột Mô tả sản phẩm (col 4 của fixed) */
+    #tableWrapTopuni .promo-table tbody td:nth-child(3) { min-width:200px; text-align:left!important; font-size:11px; color:var(--hm-muted); line-height:1.4; }
+    #tableWrapTopuni .promo-table tbody td:nth-child(4) { min-width:90px; }
+    .no-golden#tableWrapTopuni .promo-table tbody td:nth-child(3),
+    #tableWrapTopuni .promo-table.no-golden tbody td:nth-child(3) { min-width:240px; }
+    .no-golden#tableWrapTopuni .promo-table tbody td:nth-child(4),
+    #tableWrapTopuni .promo-table.no-golden tbody td:nth-child(4) { min-width:120px; }
+  </style>
 </head>
 <body>
 
@@ -290,6 +299,71 @@
   // ─── STATE ────────────────────────────────────────────────────────
   let ROLE = null;
   let APP_DATA = null;
+
+  /* ─── MOCK DATA ─── */
+  const MOCK_DATA = {
+    status:'ok',fetchedAt:new Date().toISOString(),today:'2026-08-03',source:'test',
+    catalogs:{topuni:[],topclass:[],giasu:[]},
+    promotions:{
+      topuni:{
+        periods:[
+          {name:"Khuyến học ngày thường\n(Từ 01/06/2026 - 21/07/2026)",type:"normal",dateRange:"(Từ 01/06/2026 - 21/07/2026)",colStart:5,colEnd:12,
+           custs:[{type:"new",colStart:5,colEnd:9,fields:{discountCol:5,codeCol:6,amsCol:7,priceCol:8,giftCol:9}},
+                  {type:"old",colStart:9,colEnd:12,fields:{discountCol:9,codeCol:10,priceCol:11,giftCol:12}}]},
+          {name:"Khuyến học ngày vàng\n(03/06-05/06/2026)",type:"golden",dateRange:"(03/06-05/06/2026)",colStart:12,colEnd:19,
+           custs:[{type:"new",colStart:12,colEnd:16,fields:{discountCol:12,codeCol:13,amsCol:14,priceCol:15,giftCol:16}},
+                  {type:"old",colStart:16,colEnd:19,fields:{discountCol:16,codeCol:17,priceCol:18,giftCol:19}}]}
+        ],
+        activePeriods:["Khuyến học ngày vàng\n(03/06-05/06/2026)","Khuyến học ngày thường\n(Từ 01/06/2026 - 21/07/2026)"],
+        items:[
+          {stt:1,packageName:"Combo: Giải pháp toàn diện VIP 2 kỳ thi",
+           productName:"Bao gồm:\nGiải pháp toàn diện VIP 1 kỳ thi\n& Giải pháp tiêu chuẩn VIP 1 kỳ thi",
+           components:"- Nền tảng: 6 môn (VOD)\n- Tổng ôn 2 kỳ thi (VOD + Livestream)\n- Luyện đề 2 kỳ thi (Livestream)\n- Phòng luyện không giới hạn 2 kỳ thi\n- Dịch vụ VIP (Nhóm 1-30, Lớp học thực chiến)\n- Thi thử\n- Bộ sách ôn thi độc quyền",
+           listPrice:21000000, products:["Giải pháp toàn diện VIP 1 kỳ thi","Giải pháp tiêu chuẩn VIP 1 kỳ thi"], isComboRule:true,
+           promotions:{
+             "Khuyến học ngày vàng\n(03/06-05/06/2026)":{
+               "new":{discount:0.39,code:"TP6TDVIP29EML",amsCode:"TP6TDVIP29EML",finalPrice:12810000,gift:"Tặng balo HOCMAI + Sổ tay VIP"},
+               "old":{discount:0.4,code:"TP6TDVIP29474",finalPrice:12600000,gift:"Tặng balo HOCMAI"}},
+             "Khuyến học ngày thường\n(Từ 01/06/2026 - 21/07/2026)":{
+               "new":{discount:0.35,code:"TP7TDVIP2A447",amsCode:"TP7TDVIP2JMK1",finalPrice:13650000},
+               "old":{discount:0.38,code:"TP7TDVIP2F2KL",finalPrice:13020000}}}},
+          {stt:2,packageName:"Combo: Nền tảng 3 khóa",
+           productName:"Nền tảng Toán 8\nNền tảng Tiếng Anh 8\nNền tảng Ngữ văn 8",
+           components:"- Video bài giảng VOD\n- Bài tập tự luyện\n- Kiểm tra định kỳ\n- Hỗ trợ giải đáp 24/7",
+           listPrice:4800000, products:["Nền tảng Toán 8","Nền tảng Tiếng Anh 8","Nền tảng Ngữ văn 8"], isComboRule:true,
+           promotions:{
+             "Khuyến học ngày vàng\n(03/06-05/06/2026)":{
+               "new":{discount:0.25,code:"TP8NT3MNEW",finalPrice:3600000,gift:"Tặng sổ tay học tập"},
+               "old":{discount:0.2,code:"TP8NT3MOLD",finalPrice:3840000}},
+             "Khuyến học ngày thường\n(Từ 01/06/2026 - 21/07/2026)":{
+               "new":{discount:0.2,code:"TP8NT3MNOR",finalPrice:3840000},
+               "old":{discount:0.17,code:"TP8NT3MOR",finalPrice:3984000}}}},
+          {stt:3,packageName:"Combo: VIP + Luyện đề",
+           productName:"Giải pháp toàn diện VIP TN THPT\nLuyện đề TN THPT",
+           components:"- Toàn diện VIP: VOD + Livestream + Phòng luyện\n- Luyện đề: 20 đề chuẩn cấu trúc\n- Thi thử\n- Chấm chữa chi tiết",
+           listPrice:15000000, products:["Giải pháp toàn diện VIP TN THPT","Luyện đề TN THPT"], isComboRule:true,
+           promotions:{
+             "Khuyến học ngày vàng\n(03/06-05/06/2026)":{
+               "new":{discount:0.4,code:"TP8VIPLDN",amsCode:"TP8VIPLDN",finalPrice:9000000,gift:"Tặng áo HOCMAI + Bộ đề VIP"},
+               "old":{discount:0.42,code:"TP8VIPLDO",finalPrice:8700000}},
+             "Khuyến học ngày thường\n(Từ 01/06/2026 - 21/07/2026)":{
+               "new":{discount:0.37,code:"TP8VIPLDNN",finalPrice:9450000},
+               "old":{discount:0.39,code:"TP8VIPLDNO",finalPrice:9150000}}}},
+          {stt:4,packageName:"Nền tảng Toán 8",
+           productName:"Nền tảng Toán 8",
+           components:"- Video bài giảng VOD 36 buổi\n- Bài tập tự luyện 200+ câu\n- Kiểm tra giữa kỳ & cuối kỳ",
+           listPrice:1600000, products:["Nền tảng Toán 8"], isComboRule:false,
+           promotions:{
+             "Khuyến học ngày vàng\n(03/06-05/06/2026)":{
+               "new":{discount:0.15,code:"TP8NT1NEW",finalPrice:1360000},
+               "old":{discount:0.12,code:"TP8NT1OLD",finalPrice:1408000}},
+             "Khuyến học ngày thường\n(Từ 01/06/2026 - 21/07/2026)":{
+               "new":{discount:0.12,code:"TP8NT1NN",finalPrice:1408000},
+               "old":{discount:0.1,code:"TP8NT1NO",finalPrice:1440000}}}}
+        ]},
+      topclass:{periods:[],activePeriods:[],items:[]},
+      giasu:{periods:[],activePeriods:[],items:[]}
+    }};
   let SEARCH_QUERY = '';
   const CREDENTIALS = {
     tvv: { user: 'tvv', pass: 'tvv@123', codeField: 'code', codeLabel: 'Mã Cart', ttUser: 'tvv', ttPass: 'Hocmai@112233' },
@@ -406,43 +480,15 @@
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 18000); // 18s timeout
 
-    try {
-      // Local dev: fallback to production API
-      const apiUrl = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
-        ? 'https://hocmai-tracuupromo.vercel.app/api/policies'
-        : '/api/policies';
-      const res = await fetch(apiUrl, { signal: controller.signal });
-      clearTimeout(fetchTimeout);
-      clearTimeout(progressTimer);
-      clearTimeout(slowTimer);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      if (!data.status || data.status !== 'ok') throw new Error(data.error || 'Data error');
-      APP_DATA = data;
-      $('#dataDate').textContent = data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('vi-VN') : data.today;
-      renderTabBanner('topuni'); // banner theo tab đầu tiên
-      ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
-      ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
-      hideLoading();
-    } catch (err) {
-      clearTimeout(fetchTimeout);
-      clearTimeout(progressTimer);
-      clearTimeout(slowTimer);
-      console.error('Load failed:', err);
-      showLoading('❌ Lỗi tải dữ liệu', err.name === 'AbortError' ? 'Kết nối quá chậm, vui lòng thử lại' : err.message);
-      // Show retry button
-      const card = document.querySelector('#loadingOverlay .loading-card');
-      if (!card) return;
-      const existBtn = card.querySelector('.retry-btn');
-      if (!existBtn) {
-        const btn = document.createElement('button');
-        btn.className = 'retry-btn';
-        btn.textContent = '🔄 Thử lại';
-        btn.style.cssText = 'margin-top:12px;padding:8px 24px;border:none;border-radius:8px;background:#2563EB;color:#fff;font-size:14px;cursor:pointer;';
-        btn.onclick = () => { hideLoading(); loadData(); };
-        card.appendChild(btn);
-      }
-    }
+    /* ── TEST: mock data ── */
+    APP_DATA = MOCK_DATA;
+    $('#dataDate').textContent = new Date().toLocaleString('vi-VN');
+    $('#headerSubtitle').innerHTML = '🧪 <span style="color:#FDE68A">TEST MODE</span>';
+    clearTimeout(fetchTimeout); clearTimeout(progressTimer); clearTimeout(slowTimer);
+    renderTabBanner('topuni');
+    ['topuni','topclass','giasu'].forEach(c => buildPromoTable(c));
+    ['topuni','topclass','giasu'].forEach(c => renderCalcProductList(c));
+    hideLoading();
   }
 
   // ─── BANNER ─────────────────────────────────────────────────────────

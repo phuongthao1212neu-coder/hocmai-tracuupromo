@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[TEST] Topuni nâng cấp — Mô tả SP + Quà tặng</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --hm-navy: #1A2E5C; --hm-blue: #2563EB; --hm-blue-dark: #1D4ED8;
+      --hm-blue-soft: #EFF6FF; --hm-orange: #F97316; --hm-orange-dark: #EA580C;
+      --hm-orange-soft: #FFF7ED; --hm-green: #059669; --hm-red: #DC2626;
+      --hm-text: #0F172A; --hm-muted: #64748B; --hm-border: #E2E8F0;
+      --hm-surface: #FFFFFF; --hm-bg: #F8FAFC;
+      --radius: 10px; --radius-lg: 16px; --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, #F8FBFF 0%, #F5F7FA 100%);
+      color: var(--hm-text); min-height: 100vh; line-height: 1.5; font-size: 14px;
+    }
+    .header {
+      background: linear-gradient(135deg, var(--hm-blue-dark) 0%, var(--hm-blue) 100%);
+      color: #fff; padding: 14px 28px; min-height: 80px;
+      box-shadow: 0 8px 28px rgba(37,99,235,.25);
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .header-center h1 { font-size:24px; font-weight:800; }
+    .header-center p { font-size:12px; margin-top:4px; opacity:.88; }
+    .test-badge {
+      background:#DC2626; padding:4px 12px; border-radius:999px;
+      font-size:11px; font-weight:700; animation:pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+    .app-layout { max-width:1440px; margin:0 auto; padding:24px 28px; }
+    .tabs { display:flex; gap:8px; margin-bottom:14px; border-bottom:2px solid var(--hm-border); }
+    .tab-btn {
+      padding:10px 22px; border:none; background:transparent;
+      font-size:15px; font-weight:600; color:var(--hm-muted);
+      cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;
+      display:inline-flex; align-items:center; gap:6px;
+    }
+    .tab-btn.active { color:var(--hm-blue); border-bottom-color:var(--hm-blue); font-weight:700; }
+
+    /* ─── PROMO TABLE ─── */
+    .table-wrapper {
+      overflow:auto; border:1px solid #E8EEF6; border-radius:var(--radius-lg);
+      background:#fff; box-shadow:var(--shadow-sm); max-height:60vh;
+    }
+    .promo-table {
+      width:100%; border-collapse:separate; border-spacing:0;
+      font-size:13px; min-width:auto; table-layout:auto;
+    }
+    .promo-table thead th {
+      padding:10px 10px; text-align:center; font-size:12px; font-weight:700; color:#fff;
+      position:sticky; z-index:5; border-bottom:2px solid rgba(255,255,255,.2);
+      white-space:nowrap; vertical-align:middle;
+    }
+    .promo-table thead tr:first-child th { padding:10px 10px; font-size:12px; top:0; }
+    .promo-table thead tr:nth-child(2) th { font-size:11px; font-weight:600; padding:6px 8px; top:42px; }
+    .th-fixed { background:var(--hm-navy) !important; min-width:80px; text-align:center !important; }
+    .th-normal { background:linear-gradient(180deg,#3B82F6 0%,#2563EB 100%) !important; }
+    .th-golden { background:linear-gradient(180deg,#FB923C 0%,#F97316 100%) !important; }
+    .th-normal-sub { background:#EFF6FF !important; color:#1E40AF !important; }
+    .th-golden-sub { background:#FFF7ED !important; color:#C2410C !important; }
+
+    /* Sticky fixed columns: topuni now has 4 fixed cols */
+    .promo-table tbody td { padding:8px 10px; text-align:center; border-bottom:1px solid #F1F5F9; vertical-align:middle; font-size:12px; }
+    .promo-table tbody tr:hover td { background:#F8FAFC; }
+    .promo-table tbody tr:hover td:nth-child(1),
+    .promo-table tbody tr:hover td:nth-child(2),
+    .promo-table tbody tr:hover td:nth-child(3),
+    .promo-table tbody tr:hover td:nth-child(4),
+    .promo-table tbody tr:hover td:nth-child(5) { background:#F1F5F9; }
+
+    .promo-table tbody td:first-child,
+    .promo-table tbody td:nth-child(2),
+    .promo-table tbody td:nth-child(3),
+    .promo-table tbody td:nth-child(4),
+    .promo-table tbody td:nth-child(5) {
+      position:sticky; left:0; z-index:1; background:#fff;
+    }
+    .promo-table tbody td:first-child { z-index:2; text-align:left !important; min-width:130px; }
+
+    /* Topuni: 4 fixed columns */
+    #tableWrapTopuni .promo-table tbody td:first-child { min-width:200px; }
+    #tableWrapTopuni .promo-table tbody td:nth-child(2) { min-width:200px; }
+    #tableWrapTopuni .promo-table tbody td:nth-child(3) { min-width:160px; text-align:left !important; }
+    #tableWrapTopuni .promo-table tbody td:nth-child(4) { min-width:90px; }
+
+    /* Promo cell */
+    .promo-cell { min-width:140px; max-width:200px; padding:6px 8px; }
+    .tu-card { display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .tu-price-golden { color:#C2410C; font-weight:700; font-size:14px; }
+    .tu-price-normal { color:#1E40AF; font-weight:700; font-size:14px; }
+    .tu-discount { color:#1E40AF; font-weight:700; font-size:13px; }
+    .tu-discount.discount-fixed { color:#4338CA; }
+    .tu-code-row { display:inline-flex; align-items:center; gap:4px; margin-top:2px; }
+    .tu-code-badge { background:#EFF6FF; color:#1E40AF; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+    .copy-icon { background:none; border:none; cursor:pointer; font-size:13px; padding:2px; }
+    .col-golden { background:#FFFBF5 !important; }
+    .empty-cell { color:#CBD5E1; }
+
+    /* Gift display */
+    .tu-gift-row { margin-top:2px; flex-shrink:0; }
+    .tu-gift-badge {
+      background:linear-gradient(135deg,#FEF3C7,#FDE68A);
+      color:#92400E; padding:2px 8px; border-radius:6px;
+      font-size:10px; font-weight:700;
+      display:inline-flex; align-items:center; gap:3px;
+    }
+
+    /* ─── CALC RESULT TABLE ─── */
+    .calc-result-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .period-badge { padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; }
+    .period-badge.golden { background:#FFF7ED; color:#C2410C; border:1px solid #FDBA74; }
+    .period-badge.normal { background:#EFF6FF; color:#1E40AF; border:1px solid #93C5FD; }
+    .cust-badge { padding:6px 14px; border-radius:999px; font-size:12px; background:#F1F5F9; color:#475569; }
+    .result-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .result-table th { padding:10px 12px; text-align:center; background:var(--hm-navy); color:#fff; font-weight:600; font-size:11px; }
+    .result-table td { padding:10px 12px; text-align:center; border-bottom:1px solid #F1F5F9; }
+    .result-table tbody tr:hover { background:#F8FAFC; }
+    .price-original { color:var(--hm-muted); }
+    .price-discount { color:var(--hm-blue); font-weight:700; }
+    .price-final { color:var(--hm-navy); font-weight:700; }
+    .price-save { color:var(--hm-green); font-weight:700; }
+    .golden-row { background:#FFFBF5 !important; }
+    .golden-row td.price-discount { color:var(--hm-orange); }
+    .golden-row td.price-final { color:#C2410C; }
+    .summary-row { display:flex; gap:20px; margin-top:16px; padding:16px; background:#fff; border-radius:12px; border:1px solid #E8EEF6; flex-wrap:wrap; }
+    .summary-item { display:flex; flex-direction:column; gap:4px; }
+    .s-label { font-size:11px; color:var(--hm-muted); font-weight:600; text-transform:uppercase; }
+    .s-value { font-size:18px; font-weight:700; }
+    .s-value.green { color:var(--hm-green); }
+    .btn-remove-row { background:none; border:none; cursor:pointer; font-size:16px; color:#94A3B8; padding:4px; }
+    .btn-remove-row:hover { color:var(--hm-red); }
+
+    /* Tab banner */
+    .tab-banner { margin-bottom:10px; }
+    .tab-banner-inner {
+      display:flex; align-items:center; gap:8px; padding:7px 14px;
+      border-radius:10px; font-size:13px; font-weight:600; border:1px solid transparent;
+    }
+    .tab-banner-inner .tb-icon { font-size:16px; }
+    .tab-banner-inner.golden { background:linear-gradient(135deg,#FFF7ED,#FED7AA); border-color:#FDBA74; color:#9A3412; }
+    .tab-banner-inner.normal { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); border-color:#93C5FD; color:#1E40AF; }
+    .tb-code-hint { font-family:monospace; background:rgba(0,0,0,.08); padding:1px 6px; border-radius:4px; font-size:11px; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-center">
+      <h1>🧪 TEST — Topuni nâng cấp: Mô tả SP + Quà tặng</h1>
+      <p>File test local — KHÔNG phải production</p>
+    </div>
+    <span class="test-badge">⚠ TEST</span>
+  </header>
+
+  <div class="app-layout">
+    <div class="tabs">
+      <button class="tab-btn active">📋 Tra cứu ưu đãi</button>
+      <button class="tab-btn" id="tabCalcBtn">🧮 Tính học phí</button>
+    </div>
+
+    <!-- LOOKUP PANEL -->
+    <div id="lookupPanel">
+      <div class="tab-banner">
+        <div class="tab-banner-inner golden">
+          <span class="tb-icon">🌟</span>
+          <span>Khuyến học <strong>Ngày vàng</strong> (03/08-04/08/2026)</span>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="promo-table has-golden">
+          <thead>
+            <tr>
+              <th class="th-fixed" rowspan="2">Gói ưu đãi</th>
+              <th class="th-fixed" rowspan="2">Sản phẩm trong gói</th>
+              <th class="th-fixed" rowspan="2">🆕 Mô tả sản phẩm</th>
+              <th class="th-fixed" rowspan="2">Học phí</th>
+              <th class="th-golden" colspan="2">Ngày vàng (03/08-04/08)</th>
+              <th class="th-normal" colspan="2">Ngày thường (05/08-31/08)</th>
+            </tr>
+            <tr>
+              <th class="th-golden-sub">KH mới</th>
+              <th class="th-golden-sub">KH cũ</th>
+              <th class="th-normal-sub">KH mới</th>
+              <th class="th-normal-sub">KH cũ</th>
+            </tr>
+          </thead>
+          <tbody id="promoTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CALC PANEL -->
+    <div id="calcPanel" style="display:none">
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div style="flex:0 0 380px; border:1px solid #E8EEF6; border-radius:12px; background:#fff; padding:16px; max-height:50vh; overflow:auto;">
+          <h3 style="margin-bottom:12px; font-size:15px;">Chọn sản phẩm</h3>
+          <div id="calcProductList"></div>
+          <button id="btnCalcTopuni" style="margin-top:12px; padding:10px 28px; border:none; border-radius:10px; background:linear-gradient(135deg,#2563EB,#1D4ED8); color:#fff; font-size:14px; font-weight:600; cursor:pointer;">TÍNH HỌC PHÍ</button>
+        </div>
+        <div style="flex:1; min-width:500px;" id="calcResultContainer">
+          <p style="color:var(--hm-muted); text-align:center; padding:40px;">Chọn sản phẩm → nhấn TÍNH HỌC PHÍ</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ═══════════════════ MOCK DATA ═══════════════════
+// Simulates what the API would return AFTER adding components + gift parsing
+
+const MOCK_PROMO_ITEMS = [
+  {
+    stt: 1, packageName: "Combo: Giải pháp toàn diện VIP 2 kỳ thi",
+    productName: "Bao gồm:\nGiải pháp toàn diện VIP 1 kỳ thi\n& Giải pháp tiêu chuẩn VIP 1 kỳ thi",
+    components: "- Nền tảng: 6 môn (VOD)\n- Tổng ôn 2 kỳ thi (VOD + Livestream)\n- Luyện đề 2 kỳ thi (Livestream)\n- Phòng luyện không giới hạn 2 kỳ thi\n- Dịch vụ VIP (Nhóm 1-30, Lớp học thực chiến, Nhóm aim...)\n- Thi thử\n- Bộ sách ôn thi độc quyền",
+    listPrice: 21000000,
+    products: ["Giải pháp toàn diện VIP 1 kỳ thi", "Giải pháp tiêu chuẩn VIP 1 kỳ thi"],
+    isComboRule: true,
+    promotions: {
+      "Khuyến học ngày vàng (03/08-04/08/2026)": {
+        "new": { discount: 0.39, code: "TP8TDVIP29EML", amsCode: "TP8TDVIP29EML", finalPrice: 12810000, gift: "🎁 Tặng balo HOCMAI + Sổ tay VIP" },
+        "old": { discount: 0.4, code: "TP8TDVIP29474", finalPrice: 12600000, gift: "🎁 Tặng balo HOCMAI" }
+      },
+      "Khuyến học ngày thường (05/08-31/08/2026)": {
+        "new": { discount: 0.35, code: "TP8TDVIP2A447", amsCode: "TP8TDVIP2JMK1", finalPrice: 13650000 },
+        "old": { discount: 0.38, code: "TP8TDVIP2F2KL", finalPrice: 13020000 }
+      }
+    }
+  },
+  {
+    stt: 2, packageName: "Combo: Nền tảng 3 khóa",
+    productName: "Nền tảng Toán 8\nNền tảng Tiếng Anh 8\nNền tảng Ngữ văn 8",
+    components: "- Video bài giảng VOD\n- Bài tập tự luyện\n- Kiểm tra định kỳ\n- Hỗ trợ giải đáp 24/7",
+    listPrice: 4800000,
+    products: ["Nền tảng Toán 8", "Nền tảng Tiếng Anh 8", "Nền tảng Ngữ văn 8"],
+    isComboRule: true,
+    promotions: {
+      "Khuyến học ngày vàng (03/08-04/08/2026)": {
+        "new": { discount: 0.25, code: "TP8NT3MNEW", finalPrice: 3600000, gift: "🎁 Tặng sổ tay học tập" },
+        "old": { discount: 0.2, code: "TP8NT3MOLD", finalPrice: 3840000 }
+      },
+      "Khuyến học ngày thường (05/08-31/08/2026)": {
+        "new": { discount: 0.2, code: "TP8NT3MNOR", finalPrice: 3840000 },
+        "old": { discount: 0.17, code: "TP8NT3MOR", finalPrice: 3984000 }
+      }
+    }
+  },
+  {
+    stt: 3, packageName: "Combo: VIP + Luyện đề",
+    productName: "Giải pháp toàn diện VIP TN THPT\nLuyện đề TN THPT",
+    components: "- Toàn diện VIP: VOD + Livestream + Phòng luyện\n- Luyện đề: 20 đề chuẩn cấu trúc\n- Thi thử\n- Chấm chữa chi tiết",
+    listPrice: 15000000,
+    products: ["Giải pháp toàn diện VIP TN THPT", "Luyện đề TN THPT"],
+    isComboRule: true,
+    promotions: {
+      "Khuyến học ngày vàng (03/08-04/08/2026)": {
+        "new": { discount: 0.4, code: "TP8VIPLDN", amsCode: "TP8VIPLDN", finalPrice: 9000000, gift: "🎁 Tặng áo HOCMAI + Bộ đề VIP" },
+        "old": { discount: 0.42, code: "TP8VIPLDO", finalPrice: 8700000 }
+      },
+      "Khuyến học ngày thường (05/08-31/08/2026)": {
+        "new": { discount: 0.37, code: "TP8VIPLDNN", finalPrice: 9450000 },
+        "old": { discount: 0.39, code: "TP8VIPLDNO", finalPrice: 9150000 }
+      }
+    }
+  },
+  {
+    stt: 4, packageName: "Nền tảng Toán 8",
+    productName: "Nền tảng Toán 8",
+    components: "- Video bài giảng VOD 36 buổi\n- Bài tập tự luyện 200+ câu\n- Kiểm tra giữa kỳ & cuối kỳ",
+    listPrice: 1600000,
+    products: ["Nền tảng Toán 8"],
+    isComboRule: false,
+    promotions: {
+      "Khuyến học ngày vàng (03/08-04/08/2026)": {
+        "new": { discount: 0.15, code: "TP8NT1NEW", finalPrice: 1360000 },
+        "old": { discount: 0.12, code: "TP8NT1OLD", finalPrice: 1408000 }
+      },
+      "Khuyến học ngày thường (05/08-31/08/2026)": {
+        "new": { discount: 0.12, code: "TP8NT1NN", finalPrice: 1408000 },
+        "old": { discount: 0.1, code: "TP8NT1NO", finalPrice: 1440000 }
+      }
+    }
+  }
+];
+
+const MOCK_CATALOG = [
+  { name: "Giải pháp toàn diện VIP TN THPT - Năm học 2026-2027", listPrice: 12000000, promotions: {} },
+  { name: "Giải pháp tiêu chuẩn VIP TN THPT - Năm học 2026-2027", listPrice: 9000000, promotions: {} },
+  { name: "Luyện đề TN THPT", listPrice: 3000000, promotions: {} },
+  { name: "Nền tảng Toán 8", listPrice: 1600000, promotions: {} },
+  { name: "Nền tảng Tiếng Anh 8", listPrice: 1600000, promotions: {} },
+  { name: "Nền tảng Ngữ văn 8", listPrice: 1600000, promotions: {} }
+];
+
+// ═══════════════════ HELPERS ═══════════════════
+function formatPrice(p) {
+  if (p == null) return '—';
+  if (p === 0) return '0 ₫';
+  return Math.round(p).toLocaleString('vi-VN') + ' ₫';
+}
+
+function formatDiscountLabel(discount) {
+  if (discount == null) return '—';
+  if (discount <= 1) return Math.round(discount * 100) + '%';
+  return formatPrice(discount);
+}
+
+function getCustLabel(ctype) {
+  if (ctype === 'new') return 'KH mới';
+  if (ctype === 'old') return 'KH cũ';
+  if (ctype === 'upgrade') return 'Nâng cấp';
+  if (ctype === 'all') return 'Mọi KH';
+  return ctype || '—';
+}
+
+// ═══════════════════ RENDER PROMO TABLE ═══════════════════
+const PERIODS = [
+  { name: "Khuyến học ngày vàng (03/08-04/08/2026)", type: "golden", custs: [{type:'new'},{type:'old'}] },
+  { name: "Khuyến học ngày thường (05/08-31/08/2026)", type: "normal", custs: [{type:'new'},{type:'old'}] }
+];
+
+function renderPromoCell(data, pType) {
+  if (!data || (data.discount == null && !data.code && data.finalPrice == null && !data.gift)) {
+    return '<td class="promo-cell empty-cell">—</td>';
+  }
+  let parts = [];
+
+  if (data.discount != null) {
+    let text = formatDiscountLabel(data.discount);
+    let cls = pType === 'golden' ? 'tu-price-golden' : 'tu-discount';
+    if (data.discount > 1) cls += ' discount-fixed';
+    parts.push(`<div class="${cls}">${text}</div>`);
+  }
+  if (data.finalPrice != null) {
+    let cls = pType === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
+    parts.push(`<div class="${cls}">HP: ${formatPrice(data.finalPrice)}</div>`);
+  }
+  // 🆕 Gift display
+  if (data.gift) {
+    parts.push(`<div class="tu-gift-row"><span class="tu-gift-badge">🎁 ${data.gift}</span></div>`);
+  }
+  if (data.code) {
+    parts.push(`<div class="tu-code-row">
+      <span class="tu-code-badge">${data.code}</span>
+      <button class="copy-icon" title="Sao chép" onclick="navigator.clipboard.writeText('${data.code}')">📋</button>
+    </div>`);
+  }
+
+  let colClass = pType === 'golden' ? 'col-golden' : '';
+  return `<td class="promo-cell ${colClass}"><div class="tu-card">${parts.join('')}</div></td>`;
+}
+
+function buildPromoTable() {
+  let html = '';
+  for (let item of MOCK_PROMO_ITEMS) {
+    html += '<tr>';
+    // 🆕 4 fixed columns: Gói ưu đãi, Sản phẩm trong gói, Mô tả SP, Học phí
+    html += `<td style="text-align:left;font-weight:600">${item.packageName || item.stt}</td>`;
+    html += `<td style="text-align:left">${(item.products||[]).join('<br>')}</td>`;
+    html += `<td style="text-align:left;font-size:11px;color:var(--hm-muted);white-space:pre-line">${item.components || '—'}</td>`;
+    html += `<td>${formatPrice(item.listPrice)}</td>`;
+
+    for (let p of PERIODS) {
+      let pname = p.name;
+      let promos = item.promotions || {};
+      let periodPromo = promos[pname] || {};
+      for (let cust of p.custs) {
+        let ctype = cust.type;
+        let data = periodPromo[ctype] || {};
+        html += renderPromoCell(data, p.type);
+      }
+    }
+    html += '</tr>';
+  }
+  document.getElementById('promoTableBody').innerHTML = html;
+}
+
+// ═══════════════════ RENDER CALC RESULT ═══════════════════
+let selectedCalcIdx = new Set();
+
+function renderCalcProductList() {
+  let html = '';
+  MOCK_CATALOG.forEach((item, idx) => {
+    let checked = selectedCalcIdx.has(idx) ? 'checked' : '';
+    html += `<label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #E8EEF6;border-radius:8px;margin-bottom:4px;cursor:pointer;">
+      <input type="checkbox" data-idx="${idx}" ${checked} onchange="toggleProduct(this)">
+      <span style="font-size:13px;font-weight:600">${item.name}</span>
+      <span style="font-size:12px;color:var(--hm-muted);margin-left:auto">${formatPrice(item.listPrice)}</span>
+    </label>`;
+  });
+  document.getElementById('calcProductList').innerHTML = html;
+}
+
+function toggleProduct(cb) {
+  let idx = parseInt(cb.dataset.idx);
+  if (cb.checked) selectedCalcIdx.add(idx);
+  else selectedCalcIdx.delete(idx);
+}
+
+function calculateFee() {
+  if (selectedCalcIdx.size === 0) {
+    document.getElementById('calcResultContainer').innerHTML = '<p style="color:var(--hm-muted);text-align:center;padding:40px;">Vui lòng chọn ít nhất 1 sản phẩm</p>';
+    return;
+  }
+
+  // Build results using mock promo data
+  let rows = [];
+  let totalOrig = 0, totalFinal = 0, totalSave = 0;
+
+  for (let idx of selectedCalcIdx) {
+    let catItem = MOCK_CATALOG[idx];
+    // Find matching promo item by listPrice (giống matchTopuniCatalog thật)
+    let promoItem = MOCK_PROMO_ITEMS.find(p => {
+      return Number(catItem.listPrice) > 0 && Number(catItem.listPrice) === Number(p.listPrice);
+    });
+
+    let listPrice = catItem.listPrice || 0;
+    let bestPromo = null;
+    let isGolden = false;
+
+    if (promoItem && promoItem.promotions) {
+      // Priority: golden day > normal day
+      for (let p of PERIODS) {
+        let pdata = (promoItem.promotions[p.name] || {})['new']; // mặc định KH mới
+        if (pdata && pdata.discount != null) {
+          bestPromo = pdata;
+          isGolden = p.type === 'golden';
+          break;
+        }
+      }
+    }
+
+    let discount = bestPromo ? bestPromo.discount : null;
+    let finalPrice = listPrice;
+    if (discount != null) {
+      finalPrice = discount <= 1 ? Math.round(listPrice * (1 - discount)) : Math.max(0, listPrice - discount);
+    }
+    let savings = listPrice - finalPrice;
+
+    totalOrig += listPrice;
+    totalFinal += finalPrice;
+    totalSave += savings;
+
+    rows.push({
+      name: catItem.name,
+      listPrice, discount, finalPrice, savings,
+      code: bestPromo ? (bestPromo.code || '—') : '—',
+      gift: bestPromo ? (bestPromo.gift || null) : null,
+      isGolden
+    });
+  }
+
+  renderCalcResult(rows, totalOrig, totalFinal, totalSave);
+}
+
+function renderCalcResult(rows, totalOrig, totalFinal, totalSave) {
+  let periodBadge = '<span class="period-badge golden">🌟 Ngày vàng</span>';
+  let custBadge = '<span class="cust-badge">KH <strong>MỚI</strong></span>';
+
+  let html = '<div class="calc-result-header">' + periodBadge + custBadge + '</div>';
+  html += '<div class="table-wrapper"><table class="result-table"><thead><tr>';
+  html += '<th>Sản phẩm</th><th>HP gốc</th><th>Ưu đãi</th><th>HP sau ưu đãi</th>';
+  // 🆕 Quà tặng column
+  html += '<th>🎁 Quà tặng</th>';
+  html += '<th>Tiết kiệm</th><th>Mã Cart</th><th></th>';
+  html += '</tr></thead><tbody>';
+
+  for (let r of rows) {
+    html += '<tr class="' + (r.isGolden ? 'golden-row' : '') + '">';
+    html += '<td style="text-align:left;font-weight:600">' + r.name + '</td>';
+    html += '<td class="price-original">' + formatPrice(r.listPrice) + '</td>';
+    html += '<td class="price-discount">' + formatDiscountLabel(r.discount) + '</td>';
+    html += '<td class="price-final">' + formatPrice(r.finalPrice) + '</td>';
+    // 🆕 Gift column: only show if gift exists
+    if (r.gift) {
+      html += '<td><span style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);color:#92400E;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">' + r.gift + '</span></td>';
+    } else {
+      html += '<td style="color:#CBD5E1">—</td>';
+    }
+    html += '<td class="price-save">' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
+    html += '<td>';
+    if (r.code !== '—') {
+      html += '<span class="tu-code-badge">' + r.code + '</span> <button class="copy-icon" title="Sao chép" onclick="navigator.clipboard.writeText(\'' + r.code + '\')">📋</button>';
+    } else {
+      html += '—';
+    }
+    html += '</td>';
+    html += '<td><button class="btn-remove-row" title="Bỏ chọn">✕</button></td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+
+  html += '<div class="summary-row">';
+  html += '<div class="summary-item"><span class="s-label">Tổng HP gốc</span><span class="s-value">' + formatPrice(totalOrig) + '</span></div>';
+  html += '<div class="summary-item"><span class="s-label">Tổng HP sau ưu đãi</span><span class="s-value green">' + formatPrice(totalFinal) + '</span></div>';
+  html += '<div class="summary-item"><span class="s-label">Tổng tiết kiệm</span><span class="s-value green">-' + formatPrice(totalSave) + '</span></div>';
+  html += '</div>';
+
+  document.getElementById('calcResultContainer').innerHTML = html;
+}
+
+// ═══════════════════ TAB SWITCHING ═══════════════════
+document.getElementById('tabCalcBtn').addEventListener('click', function() {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  this.classList.add('active');
+  document.getElementById('lookupPanel').style.display = 'none';
+  document.getElementById('calcPanel').style.display = 'block';
+});
+
+document.querySelector('.tab-btn.active').addEventListener('click', function() {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  this.classList.add('active');
+  document.getElementById('lookupPanel').style.display = 'block';
+  document.getElementById('calcPanel').style.display = 'none';
+});
+
+document.getElementById('btnCalcTopuni').addEventListener('click', calculateFee);
+
+// INIT
+buildPromoTable();
+renderCalcProductList();
+</script>
+</body>
+</html>

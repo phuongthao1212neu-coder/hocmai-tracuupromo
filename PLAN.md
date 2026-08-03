@@ -731,6 +731,14 @@ Tất cả nằm trong sheet **"Lịch ngày vàng"** (cùng bộ sheet HOCMAI):
 
 ## 17. Changelog
 
+### 03/08/2026
+
+**Tính năng mới:**
+
+| # | Tính năng | Mô tả |
+|---|---|---|
+| 7 | **Cột Mô tả sản phẩm cho Topuni** | Tab Tra cứu ưu đãi thêm cột "Mô tả sản phẩm" (thứ 3) hiển thị nội dung từ cột `components` trong sheet Topuni2027. Font nhỏ, màu xám, xuống dòng rõ ràng. Chỉ sửa `index.html` (getFixedHeaders + getFixedCols) và `styles.css` (width + sticky). Không đụng logic tính toán. |
+
 ### 03/07/2026
 
 **Sửa lỗi:**

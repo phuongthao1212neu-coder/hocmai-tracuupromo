@@ -8,6 +8,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <!-- 🆕 TEST: Gift & Mô tả SP styles -->
+  <style>
+    .tu-gift-row { margin-top:2px; }
+    .tu-gift-badge {
+      background:linear-gradient(135deg,#FEF3C7,#FDE68A);
+      color:#92400E; padding:2px 8px; border-radius:6px;
+      font-size:10px; font-weight:700; white-space:normal; display:inline-block;
+    }
+    /* Topuni: 4 fixed columns in promo table */
+    #tableWrapTopuni .promo-table tbody td:nth-child(3) { min-width:160px; text-align:left !important; font-size:11px; color:var(--hm-muted); position:sticky; left:400px; z-index:1; background:#fff; }
+    #tableWrapTopuni .promo-table tbody td:nth-child(4) { min-width:90px; position:sticky; left:560px; z-index:1; background:#fff; }
+  </style>
 </head>
 <body>
 
@@ -290,6 +302,127 @@
   // ─── STATE ────────────────────────────────────────────────────────
   let ROLE = null;
   let APP_DATA = null;
+
+  // ═══════ MOCK DATA (TEST ONLY) ═══════
+  const MOCK_APP_DATA = {
+    status: 'ok', fetchedAt: new Date().toISOString(), today: '2026-08-03', source: 'mock-test',
+    catalogs: {
+      topuni: [
+        { name: "Giải pháp toàn diện VIP TN THPT - Năm học 2026-2027", listPrice: 12000000, promotions: {
+          "Khuyến học ngày vàng\n(03/08-04/08/2026)": { "new": { discount: 0.4, code: "TP8VIPLDN", amsCode: "TP8VIPLDN", finalPrice: 7200000, gift: "Tặng áo HOCMAI + Bộ đề VIP" } },
+          "Khuyến học ngày thường\n(05/08-31/08/2026)": { "new": { discount: 0.37, code: "TP8VIPLDNN", finalPrice: 7560000 } }
+        }},
+        { name: "Giải pháp tiêu chuẩn VIP TN THPT - Năm học 2026-2027", listPrice: 9000000, promotions: {
+          "Khuyến học ngày vàng\n(03/08-04/08/2026)": { "new": { discount: 0.35, code: "TP8TCVIPN", finalPrice: 5850000 } }
+        }},
+        { name: "Luyện đề TN THPT", listPrice: 3000000, promotions: {
+          "Khuyến học ngày vàng\n(03/08-04/08/2026)": { "new": { discount: 0.3, code: "TP8LDNEW", finalPrice: 2100000 } }
+        }},
+        { name: "Nền tảng Toán 8", listPrice: 1600000, promotions: {
+          "Khuyến học ngày vàng\n(03/08-04/08/2026)": { "new": { discount: 0.15, code: "TP8NT1NEW", finalPrice: 1360000 } },
+          "Khuyến học ngày thường\n(05/08-31/08/2026)": { "new": { discount: 0.12, code: "TP8NT1NN", finalPrice: 1408000 } }
+        }},
+        { name: "Nền tảng Tiếng Anh 8", listPrice: 1600000, promotions: {
+          "Khuyến học ngày vàng\n(03/08-04/08/2026)": { "new": { discount: 0.15, code: "TP8TA1NEW", finalPrice: 1360000 } }
+        }},
+        { name: "Nền tảng Ngữ văn 8", listPrice: 1600000, promotions: {
+          "Khuyến học ngày vàng\n(03/08-04/08/2026)": { "new": { discount: 0.15, code: "TP8NV1NEW", finalPrice: 1360000 } }
+        }}
+      ],
+      topclass: [],
+      giasu: []
+    },
+    promotions: {
+      topuni: {
+        periods: [
+          { name: "Khuyến học ngày vàng\n(03/08-04/08/2026)", type: "golden", dateRange: "(03/08-04/08/2026)", colStart: 6, colEnd: 13,
+            custs: [{type:'new',colStart:6,colEnd:10,fields:{discountCol:6,codeCol:7,amsCol:8,priceCol:9,giftCol:10}},
+                    {type:'old',colStart:10,colEnd:13,fields:{discountCol:10,codeCol:11,priceCol:12,giftCol:13}}] },
+          { name: "Khuyến học ngày thường\n(05/08-31/08/2026)", type: "normal", dateRange: "(05/08-31/08/2026)", colStart: 13, colEnd: 20,
+            custs: [{type:'new',colStart:13,colEnd:17,fields:{discountCol:13,codeCol:14,amsCol:15,priceCol:16}},
+                    {type:'old',colStart:17,colEnd:20,fields:{discountCol:17,codeCol:18,priceCol:19}}] }
+        ],
+        activePeriods: ["Khuyến học ngày vàng\n(03/08-04/08/2026)", "Khuyến học ngày thường\n(05/08-31/08/2026)"],
+        items: [
+          {
+            stt: 1, packageName: "Combo: Giải pháp toàn diện VIP 2 kỳ thi",
+            productName: "Bao gồm:\nGiải pháp toàn diện VIP 1 kỳ thi\n& Giải pháp tiêu chuẩn VIP 1 kỳ thi",
+            components: "- Nền tảng: 6 môn (VOD)\n- Tổng ôn 2 kỳ thi (VOD + Livestream)\n- Luyện đề 2 kỳ thi (Livestream)\n- Phòng luyện không giới hạn 2 kỳ thi\n- Dịch vụ VIP (Nhóm 1-30, Lớp học thực chiến)\n- Thi thử\n- Bộ sách ôn thi độc quyền",
+            listPrice: 21000000,
+            products: ["Giải pháp toàn diện VIP 1 kỳ thi", "Giải pháp tiêu chuẩn VIP 1 kỳ thi"],
+            isComboRule: true,
+            promotions: {
+              "Khuyến học ngày vàng\n(03/08-04/08/2026)": {
+                "new": { discount: 0.39, code: "TP8TDVIP29EML", amsCode: "TP8TDVIP29EML", finalPrice: 12810000, gift: "Tặng balo HOCMAI + Sổ tay VIP" },
+                "old": { discount: 0.4,  code: "TP8TDVIP29474", finalPrice: 12600000, gift: "Tặng balo HOCMAI" }
+              },
+              "Khuyến học ngày thường\n(05/08-31/08/2026)": {
+                "new": { discount: 0.35, code: "TP8TDVIP2A447", amsCode: "TP8TDVIP2JMK1", finalPrice: 13650000 },
+                "old": { discount: 0.38, code: "TP8TDVIP2F2KL", finalPrice: 13020000 }
+              }
+            }
+          },
+          {
+            stt: 2, packageName: "Combo: Nền tảng 3 khóa",
+            productName: "Nền tảng Toán 8\nNền tảng Tiếng Anh 8\nNền tảng Ngữ văn 8",
+            components: "- Video bài giảng VOD\n- Bài tập tự luyện\n- Kiểm tra định kỳ\n- Hỗ trợ giải đáp 24/7",
+            listPrice: 4800000,
+            products: ["Nền tảng Toán 8", "Nền tảng Tiếng Anh 8", "Nền tảng Ngữ văn 8"],
+            isComboRule: true,
+            promotions: {
+              "Khuyến học ngày vàng\n(03/08-04/08/2026)": {
+                "new": { discount: 0.25, code: "TP8NT3MNEW", finalPrice: 3600000, gift: "Tặng sổ tay học tập" },
+                "old": { discount: 0.2,  code: "TP8NT3MOLD", finalPrice: 3840000 }
+              },
+              "Khuyến học ngày thường\n(05/08-31/08/2026)": {
+                "new": { discount: 0.2,  code: "TP8NT3MNOR", finalPrice: 3840000 },
+                "old": { discount: 0.17, code: "TP8NT3MOR", finalPrice: 3984000 }
+              }
+            }
+          },
+          {
+            stt: 3, packageName: "Combo: VIP + Luyện đề",
+            productName: "Giải pháp toàn diện VIP TN THPT\nLuyện đề TN THPT",
+            components: "- Toàn diện VIP: VOD + Livestream + Phòng luyện\n- Luyện đề: 20 đề chuẩn cấu trúc\n- Thi thử\n- Chấm chữa chi tiết",
+            listPrice: 15000000,
+            products: ["Giải pháp toàn diện VIP TN THPT", "Luyện đề TN THPT"],
+            isComboRule: true,
+            promotions: {
+              "Khuyến học ngày vàng\n(03/08-04/08/2026)": {
+                "new": { discount: 0.4,  code: "TP8VIPLDN", amsCode: "TP8VIPLDN", finalPrice: 9000000, gift: "Tặng áo HOCMAI + Bộ đề VIP" },
+                "old": { discount: 0.42, code: "TP8VIPLDO", finalPrice: 8700000 }
+              },
+              "Khuyến học ngày thường\n(05/08-31/08/2026)": {
+                "new": { discount: 0.37, code: "TP8VIPLDNN", finalPrice: 9450000 },
+                "old": { discount: 0.39, code: "TP8VIPLDNO", finalPrice: 9150000 }
+              }
+            }
+          },
+          {
+            stt: 4, packageName: "Nền tảng Toán 8",
+            productName: "Nền tảng Toán 8",
+            components: "- Video bài giảng VOD 36 buổi\n- Bài tập tự luyện 200+ câu\n- Kiểm tra giữa kỳ & cuối kỳ",
+            listPrice: 1600000,
+            products: ["Nền tảng Toán 8"],
+            isComboRule: false,
+            promotions: {
+              "Khuyến học ngày vàng\n(03/08-04/08/2026)": {
+                "new": { discount: 0.15, code: "TP8NT1NEW", finalPrice: 1360000 },
+                "old": { discount: 0.12, code: "TP8NT1OLD", finalPrice: 1408000 }
+              },
+              "Khuyến học ngày thường\n(05/08-31/08/2026)": {
+                "new": { discount: 0.12, code: "TP8NT1NN", finalPrice: 1408000 },
+                "old": { discount: 0.1,  code: "TP8NT1NO", finalPrice: 1440000 }
+              }
+            }
+          }
+        ]
+      },
+      topclass: { periods: [], activePeriods: [], items: [] },
+      giasu: { periods: [], activePeriods: [], items: [] }
+    }
+  };
+
   let SEARCH_QUERY = '';
   const CREDENTIALS = {
     tvv: { user: 'tvv', pass: 'tvv@123', codeField: 'code', codeLabel: 'Mã Cart', ttUser: 'tvv', ttPass: 'Hocmai@112233' },
@@ -406,43 +539,18 @@
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 18000); // 18s timeout
 
-    try {
-      // Local dev: fallback to production API
-      const apiUrl = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
-        ? 'https://hocmai-tracuupromo.vercel.app/api/policies'
-        : '/api/policies';
-      const res = await fetch(apiUrl, { signal: controller.signal });
-      clearTimeout(fetchTimeout);
-      clearTimeout(progressTimer);
-      clearTimeout(slowTimer);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      if (!data.status || data.status !== 'ok') throw new Error(data.error || 'Data error');
-      APP_DATA = data;
-      $('#dataDate').textContent = data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('vi-VN') : data.today;
-      renderTabBanner('topuni'); // banner theo tab đầu tiên
-      ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
-      ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
-      hideLoading();
-    } catch (err) {
-      clearTimeout(fetchTimeout);
-      clearTimeout(progressTimer);
-      clearTimeout(slowTimer);
-      console.error('Load failed:', err);
-      showLoading('❌ Lỗi tải dữ liệu', err.name === 'AbortError' ? 'Kết nối quá chậm, vui lòng thử lại' : err.message);
-      // Show retry button
-      const card = document.querySelector('#loadingOverlay .loading-card');
-      if (!card) return;
-      const existBtn = card.querySelector('.retry-btn');
-      if (!existBtn) {
-        const btn = document.createElement('button');
-        btn.className = 'retry-btn';
-        btn.textContent = '🔄 Thử lại';
-        btn.style.cssText = 'margin-top:12px;padding:8px 24px;border:none;border-radius:8px;background:#2563EB;color:#fff;font-size:14px;cursor:pointer;';
-        btn.onclick = () => { hideLoading(); loadData(); };
-        card.appendChild(btn);
-      }
-    }
+    /* ── TEST MODE: inject mock data ── */
+    console.log('🧪 TEST MODE — using mock data');
+    APP_DATA = MOCK_APP_DATA;
+    $('#dataDate').textContent = new Date().toLocaleString('vi-VN');
+    $('#headerSubtitle').innerHTML = '🧪 <span style="color:#FDE68A">TEST MODE</span> — Dữ liệu mẫu';
+    clearTimeout(fetchTimeout);
+    clearTimeout(progressTimer);
+    clearTimeout(slowTimer);
+    renderTabBanner('topuni');
+    ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
+    ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
+    hideLoading();
   }
 
   // ─── BANNER ─────────────────────────────────────────────────────────
@@ -551,6 +659,11 @@
       const cls = pType === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
       priceHtml = `<div class="${cls}">HP: ${formatPrice(data.finalPrice)}</div>`;
     }
+    // 🆕 Quà tặng
+    let giftHtml = '';
+    if (data.gift) {
+      giftHtml = `<div class="tu-gift-row"><span class="tu-gift-badge">🎁 ${data.gift}</span></div>`;
+    }
 
     // Gia sư: DS role dùng code, TVV role dùng codeField
     let code = null;
@@ -570,7 +683,7 @@
     const colClass = pType === 'golden' ? 'col-golden' : '';
     return `<td class="promo-cell ${colClass}">
       <div class="tu-card">
-        ${discountHtml}${priceHtml}${codeHtml}
+        ${discountHtml}${priceHtml}${giftHtml}${codeHtml}
       </div>
     </td>`;
   }
@@ -919,7 +1032,8 @@
       var result = {
         discount: rate.discount,
         periodName: pname,
-        code: rate[codeField] || '—'
+        code: rate[codeField] || '—',
+        gift: rate.gift || null
       };
       if (isGolden) {
         // Golden day: use immediately and stop looking
@@ -1215,6 +1329,7 @@
       var listPrice = mr.listPrice;
       var discount = mr.promo ? mr.promo.discount : null;
       var code = mr.promo ? mr.promo.code : '—';
+      var gift = mr.promo ? (mr.promo.gift || null) : null;
       var finalPrice = discount != null ? applyDiscount(listPrice, mr.promo) : listPrice;
       var savings = discount != null ? (listPrice - finalPrice) : 0;
       var isGolden = mr.promo ? (mr.promo.periodName || '').toLowerCase().indexOf('ngày vàng') >= 0 : false;
@@ -1242,6 +1357,7 @@
           finalPrice: finalPrice,
           savings: savings,
           code: code,
+          gift: gift,
           isCombo: mr.isCombo || false,
           isGolden: isGolden,
           periodName: mr.promo ? mr.promo.periodName : null
@@ -1265,7 +1381,7 @@
 
     var html = '<div class="calc-result-header">' + periodBadge + custBadge + '</div>';
     html += '<div class="table-wrapper"><table class="result-table"><thead><tr>';
-    html += '<th>Sản phẩm</th><th>HP gốc</th><th>Ưu đãi</th><th>HP sau ưu đãi</th><th>Tiết kiệm</th>';
+    html += '<th>Sản phẩm</th><th>HP gốc</th><th>Ưu đãi</th><th>HP sau ưu đãi</th><th>🎁 Quà tặng</th><th>Tiết kiệm</th>';
     html += '<th>' + codeLabel + '</th><th></th>';
     html += '</tr></thead><tbody>';
 
@@ -1301,10 +1417,16 @@
           html += '<td class="merged-cell"></td>';
           html += '<td class="merged-cell"></td>';
           html += '<td class="merged-cell"></td>';
+          html += '<td class="merged-cell"></td>';
         } else {
           // Last sub-row (or single row): show promo info
           html += '<td class="price-discount">' + formatDiscountLabel(r.discount) + '</td>';
           html += '<td class="price-final">' + formatPrice(r.finalPrice) + '</td>';
+          if (r.gift) {
+            html += '<td><span class="tu-gift-badge">🎁 ' + r.gift + '</span></td>';
+          } else {
+            html += '<td style="color:#CBD5E1">—</td>';
+          }
           html += '<td class="price-save">' + (r.savings > 0 ? '-' + formatPrice(r.savings) : '—') + '</td>';
           html += '<td>';
           if (r.code !== '—') {

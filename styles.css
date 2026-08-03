@@ -241,7 +241,8 @@ body {
 /* Topuni */
 #tableWrapTopuni .promo-table tbody td:first-child { min-width:200px; }
 #tableWrapTopuni .promo-table tbody td:nth-child(2) { min-width:200px; }
-#tableWrapTopuni .promo-table tbody td:nth-child(3) { min-width:90px; }
+#tableWrapTopuni .promo-table tbody td:nth-child(3) { min-width:220px; text-align:left !important; font-size:11px; color:var(--hm-muted); line-height:1.4; }
+#tableWrapTopuni .promo-table tbody td:nth-child(4) { min-width:90px; }
 
 /* Khi không có ngày vàng: tăng width cột fixed */
 .no-golden#tableWrapTopuni .promo-table tbody td:first-child,
@@ -249,7 +250,9 @@ body {
 .no-golden#tableWrapTopuni .promo-table tbody td:nth-child(2),
 #tableWrapTopuni .promo-table.no-golden tbody td:nth-child(2) { min-width:280px; }
 .no-golden#tableWrapTopuni .promo-table tbody td:nth-child(3),
-#tableWrapTopuni .promo-table.no-golden tbody td:nth-child(3) { min-width:120px; }
+#tableWrapTopuni .promo-table.no-golden tbody td:nth-child(3) { min-width:300px; }
+.no-golden#tableWrapTopuni .promo-table tbody td:nth-child(4),
+#tableWrapTopuni .promo-table.no-golden tbody td:nth-child(4) { min-width:120px; }
 
 #tableWrapGiasu .promo-table.no-golden tbody td:first-child { min-width:200px; }
 #tableWrapGiasu .promo-table.no-golden tbody td:nth-child(2) { min-width:120px; }
