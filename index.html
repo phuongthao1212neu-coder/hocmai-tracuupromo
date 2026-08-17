@@ -105,6 +105,7 @@
     <div class="panel active" id="panelLookup">
       <div class="cat-tab-bar" id="catTabsLookup">
         <button class="cat-tab active" data-cat="topuni">Topuni</button>
+        <button class="cat-tab" data-cat="vact">V-ACT</button>
         <button class="cat-tab" data-cat="topclass">Topclass</button>
         <button class="cat-tab" data-cat="giasu">Gia sư</button>
       </div>
@@ -115,6 +116,10 @@
       <div class="cat-panel active" data-catpanel="topuni">
         <div class="tab-banner" id="bannerTopuni"></div>
         <div class="table-wrapper" id="tableWrapTopuni"></div>
+      </div>
+      <div class="cat-panel" data-catpanel="vact">
+        <div class="tab-banner" id="bannerVact"></div>
+        <div class="table-wrapper" id="tableWrapVact"></div>
       </div>
       <div class="cat-panel" data-catpanel="topclass">
         <div class="tab-banner" id="bannerTopclass"></div>
@@ -130,6 +135,7 @@
     <div class="panel" id="panelCalc">
       <div class="cat-tab-bar" id="catTabsCalc">
         <button class="cat-tab active" data-cat="topuni">Topuni</button>
+        <button class="cat-tab" data-cat="vact">V-ACT</button>
         <button class="cat-tab" data-cat="topclass">Topclass</button>
         <button class="cat-tab" data-cat="giasu">Gia sư</button>
       </div>
@@ -358,6 +364,8 @@
       $(sel + ' .cat-tab[data-cat="topuni"]').classList.add('active');
     });
     $$('#panelLookup .cat-panel, #panelCalc .cat-panel').forEach(p => p.classList.remove('active'));
+    $$('#catTabsLookup .cat-tab').forEach(b => b.classList.remove('active'));
+    $('#catTabsLookup .cat-tab[data-cat="topuni"]').classList.add('active');
     $('#panelLookup .cat-panel[data-catpanel="topuni"]').classList.add('active');
     $('#panelCalc .cat-panel[data-catpanel="topuni"]').classList.add('active');
     loadData();
@@ -421,7 +429,7 @@
       APP_DATA = data;
       $('#dataDate').textContent = data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('vi-VN') : data.today;
       renderTabBanner('topuni'); // banner theo tab đầu tiên
-      ['topuni', 'topclass', 'giasu'].forEach(c => buildPromoTable(c));
+      ['topuni', 'topclass', 'giasu', 'vact'].forEach(c => buildPromoTable(c));
       ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
       hideLoading();
     } catch (err) {
@@ -486,6 +494,7 @@
   // ─── PROMO TABLE ────────────────────────────────────────────────────
   function getFixedHeaders(cat) {
     if (cat === 'topuni') return ['Gói ưu đãi', 'Sản phẩm trong gói', 'Mô tả sản phẩm', 'Học phí'];
+    if (cat === 'vact') return ['Gói ưu đãi', 'Thời gian khai giảng', 'Mô tả', 'Học phí'];
     if (cat === 'topclass') return ['Loại SP', 'Gói HP', 'Khối lớp', 'Môn học', 'Số lượng/\nLần Đăng kí'];
     if (cat === 'giasu') return ['Loại SP', 'Số buổi', 'HP/buổi', 'Tổng HP'];
     return [];
@@ -496,6 +505,14 @@
       return [
         item.packageName || item.stt || (idx + 1),
         Array.isArray(item.products) ? item.products.join('<br>') : (item.productName || '—'),
+        (item.components || '—').replace(/\n/g, '<br>'),
+        formatPrice(item.listPrice)
+      ];
+    }
+    if (cat === 'vact') {
+      return [
+        item.packageName || item.stt || (idx + 1),
+        (item.startDate || '—').replace(/\n/g, '<br>'),
         (item.components || '—').replace(/\n/g, '<br>'),
         formatPrice(item.listPrice)
       ];
@@ -525,55 +542,93 @@
     if (ctype === 'old') return 'KH cũ';
     if (ctype === 'upgrade') return 'Nâng cấp';
     if (ctype === 'all') return 'Mọi KH';
+    if (ctype === 'individual') return 'KH cá nhân';
+    if (ctype === 'group') return 'KH nhóm';
     return ctype || '—';
   }
 
   function renderPromoCell(data, codeField, codeLabel, pType, ctype, cat) {
-    if (!data || (data.discount == null && !data[codeField] && data.finalPrice == null)) {
-      return '<td class="promo-cell empty-cell">—</td>';
-    }
-    let discountHtml = '';
-    let priceHtml = '';
-    let codeHtml = '';
-
-    if (data.discount != null) {
-      let discountText;
-      let cls = pType === 'golden' ? 'tu-price-golden' : 'tu-discount';
-      if (data.discount <= 1) {
-        discountText = Math.round(data.discount * 100) + '%';
-      } else {
-        discountText = formatPrice(data.discount);
-        cls += ' discount-fixed';
+      // V-ACT: không có mã ưu đãi, không phân biệt golden/normal
+      if (cat === 'vact') {
+        if (!data || (data.discount == null && data.finalPrice == null && !data.gift)) {
+          return '<td class="promo-cell empty-cell">—</td>';
+        }
+        let dHtml = '';
+        let pHtml = '';
+        let giftHtml = '';
+        if (data.discount != null) {
+          let discountText;
+          if (data.discount <= 1) {
+            discountText = Math.round(data.discount * 100) + '%';
+          } else {
+            discountText = formatPrice(data.discount);
+          }
+          dHtml = `<div class="tu-discount">${discountText}</div>`;
+        }
+        if (data.finalPrice != null) {
+          pHtml = `<div class="tu-price-normal">HP: ${formatPrice(data.finalPrice)}</div>`;
+        }
+        if (data.gift) {
+          giftHtml = `<div class="tu-gift-row"><span class="tu-gift-badge">🎁 ${data.gift}</span></div>`;
+        }
+        return `<td class="promo-cell">
+          <div class="tu-card">
+            ${dHtml}${pHtml}${giftHtml}
+          </div>
+        </td>`;
       }
-      discountHtml = `<div class="${cls}">${discountText}</div>`;
-    }
-    if (data.finalPrice != null) {
-      const cls = pType === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
-      priceHtml = `<div class="${cls}">HP: ${formatPrice(data.finalPrice)}</div>`;
-    }
 
-    // Gia sư: DS role dùng code, TVV role dùng codeField
-    let code = null;
-    if (cat === 'giasu' && ROLE === 'ds') {
-      code = data.code;
-    } else {
-      code = data[codeField];
-    }
-    if (code) {
-      codeHtml = `
-        <div class="tu-code-row">
-          <span class="tu-code-badge">${code}</span>
-          <button class="copy-icon" title="Sao chép" onclick="copyText('${code}', this)">📋</button>
-        </div>`;
-    }
+      if (!data || (data.discount == null && !data[codeField] && data.finalPrice == null && !data.gift)) {
+        return '<td class="promo-cell empty-cell">—</td>';
+      }
+      let discountHtml = '';
+      let priceHtml = '';
+      let codeHtml = '';
+      let giftHtml = '';
 
-    const colClass = pType === 'golden' ? 'col-golden' : '';
-    return `<td class="promo-cell ${colClass}">
-      <div class="tu-card">
-        ${discountHtml}${priceHtml}${codeHtml}
-      </div>
-    </td>`;
-  }
+      if (data.discount != null) {
+        let discountText;
+        let cls = pType === 'golden' ? 'tu-price-golden' : 'tu-discount';
+        if (data.discount <= 1) {
+          discountText = Math.round(data.discount * 100) + '%';
+        } else {
+          discountText = formatPrice(data.discount);
+          cls += ' discount-fixed';
+        }
+        discountHtml = `<div class="${cls}">${discountText}</div>`;
+      }
+      if (data.finalPrice != null) {
+        const cls = pType === 'golden' ? 'tu-price-golden' : 'tu-price-normal';
+        priceHtml = `<div class="${cls}">HP: ${formatPrice(data.finalPrice)}</div>`;
+      }
+
+      // 🎁 Quà tặng
+      if (data.gift) {
+        giftHtml = `<div class="tu-gift-row"><span class="tu-gift-badge">🎁 ${data.gift}</span></div>`;
+      }
+
+      // Gia sư: DS role dùng code, TVV role dùng codeField
+      let code = null;
+      if (cat === 'giasu' && ROLE === 'ds') {
+        code = data.code;
+      } else {
+        code = data[codeField];
+      }
+      if (code) {
+        codeHtml = `
+          <div class="tu-code-row">
+            <span class="tu-code-badge">${code}</span>
+            <button class="copy-icon" title="Sao chép" onclick="copyText('${code}', this)">📋</button>
+          </div>`;
+      }
+
+      const colClass = pType === 'golden' ? 'col-golden' : '';
+      return `<td class="promo-cell ${colClass}">
+        <div class="tu-card">
+          ${discountHtml}${priceHtml}${giftHtml}${codeHtml}
+        </div>
+      </td>`;
+    }
 
   function cleanPeriodName(name) {
     // Remove date patterns like "\n(Từ 01/06/2026 - 31/07/2026)", "\n(03/06-05/06/2026)", etc.
@@ -688,6 +743,8 @@
       if (item.packageName) fields.push(item.packageName);
       if (item.productName) fields.push(item.productName);
       if (item.name) fields.push(item.name);
+      if (item.components) fields.push(item.components);
+      if (item.startDate) fields.push(item.startDate);
       if (item.productType) fields.push(item.productType);
       if (item.feePackage) fields.push(item.feePackage);
       if (item.gradeLevel) fields.push(item.gradeLevel);

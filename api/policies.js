@@ -4,7 +4,7 @@
 // Frontend quyết định hiển thị mã Cart hay mã AMS dựa trên role.
 
 const APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycby4kur0pR41dc5x4TL1vUSk4EfXfU2GWvBJIvaAnswF39cwol6TjmrhGGITryOTRokH/exec';
+  'https://script.google.com/macros/s/AKfycbwpCvZVstDeaTOqjoXtYOHhssbxcO-dtDNX4T_DBgHlwOcjDxU7U9CTtxSTUFrjHEuc/exec';
 
 // =========================================================================
 // Helpers: thời gian
@@ -131,6 +131,8 @@ function determineCustomerType(text) {
   if (s.includes('lần đầu') || s.includes('mới')) return 'new';
   if (s.includes('cũ')) return 'old';
   if (s.includes('mọi đối tượng') || s.includes('áp dụng với')) return 'all';
+  if (s.includes('cá nhân')) return 'individual';
+  if (s.includes('nhóm') || s.includes('gom')) return 'group';
   return 'unknown';
 }
 
@@ -140,6 +142,7 @@ function fieldNameToKey(label) {
   if (s.includes('ams')) return 'ams';
   if (s.includes('mã')) return 'code';
   if (s.includes('ưu đãi') || s.includes('voucher')) return 'discount';
+  if (s.includes('quà tặng')) return 'gift';
   return null;
 }
 
@@ -184,6 +187,7 @@ function parseSheetPromotions(rows, fixedColMap) {
         else if (key === 'ams') seg.fields.amsCol = c;
         else if (key === 'discount') seg.fields.discountCol = c;
         else if (key === 'price') seg.fields.priceCol = c;
+        else if (key === 'gift') seg.fields.giftCol = c;
       }
     }
   }
@@ -218,6 +222,10 @@ function parseSheetPromotions(rows, fixedColMap) {
         if (seg.fields.priceCol !== undefined) {
           const pv = coerceValue(row[seg.fields.priceCol]);
           if (typeof pv === 'number') data.finalPrice = pv;
+        }
+        if (seg.fields.giftCol !== undefined) {
+          const gift = String(row[seg.fields.giftCol] || '').trim();
+          if (gift) data.gift = gift;
         }
         if (Object.keys(data).length > 0) prom[seg.type] = data;
       }
@@ -277,6 +285,122 @@ function parseGiasuPromotions(rows) {
     { col: 0, key: 'name' }, { col: 1, key: 'sessions', asNumber: true },
     { col: 2, key: 'pricePerSession', asNumber: true }, { col: 3, key: 'totalListPrice', asNumber: true }
   ]);
+}
+
+// V-ACT: dedicated parser — xử lý fallback khi sub-header / cust-header trống
+function parseVactPromotions(rows) {
+  if (!Array.isArray(rows) || rows.length < 4) return { periods: [], items: [] };
+  const mainHdr = rows[0];
+  const subHdr = rows[1] || [];
+  const custHdr = rows[2] || [];
+  const dataRows = rows.slice(3);
+  const totalCols = Math.max(mainHdr.length, subHdr.length, custHdr.length);
+
+  // Fixed columns: col 0-4
+  const FIXED = 5;
+  const fixedCols = [
+    { col: 0, key: 'stt', asNumber: true },
+    { col: 1, key: 'packageName' },
+    { col: 2, key: 'startDate' },
+    { col: 3, key: 'components' },
+    { col: 4, key: 'listPrice', asNumber: true }
+  ];
+
+  // Parse periods from mainHdr
+  const periods = [];
+  for (let c = FIXED; c < totalCols; c++) {
+    const v = String(mainHdr[c] || '').trim();
+    if (v) {
+      periods.push({ name: v, type: 'normal', dateRange: extractDateRange(v), colStart: c, colEnd: totalCols });
+      if (periods.length > 1) periods[periods.length - 2].colEnd = c;
+    }
+  }
+
+  // For each period, detect cust types from custHdr (fallback to subHdr)
+  for (const period of periods) {
+    period.custs = [];
+    let currentCust = null;
+    for (let c = period.colStart; c < period.colEnd && c < totalCols; c++) {
+      const cv = String(custHdr[c] || '').trim();
+      if (cv) {
+        currentCust = determineCustomerType(cv);
+        period.custs.push({ type: currentCust, colStart: c, colEnd: period.colEnd, fields: {} });
+      }
+    }
+    // Fallback: nếu không có cust-header, tự động chia thành 2 cust (individual, group)
+    if (period.custs.length === 0) {
+      const span = period.colEnd - period.colStart;
+      const half = Math.floor(span / 2);
+      period.custs = [
+        { type: 'individual', colStart: period.colStart, colEnd: period.colStart + half, fields: {} },
+        { type: 'group', colStart: period.colStart + half, colEnd: period.colEnd, fields: {} }
+      ];
+    }
+    // Set colEnd for each cust
+    for (let i = 0; i < period.custs.length; i++) {
+      if (i < period.custs.length - 1) period.custs[i].colEnd = period.custs[i + 1].colStart;
+    }
+
+    // Detect fields from subHdr
+    for (const seg of period.custs) {
+      for (let c = seg.colStart; c < seg.colEnd && c < totalCols; c++) {
+        const f = String(subHdr[c] || '').trim();
+        if (!f) continue;
+        const key = fieldNameToKey(f);
+        if (key === 'discount' && seg.fields.discountCol === undefined) seg.fields.discountCol = c;
+        else if (key === 'price') seg.fields.priceCol = c;
+        else if (key === 'gift') seg.fields.giftCol = c;
+      }
+      // Fallback: nếu sub-header trống, mỗi cust có 2 cột: ưu đãi, HP
+      if (seg.fields.discountCol === undefined && seg.fields.priceCol === undefined) {
+        const segSpan = seg.colEnd - seg.colStart;
+        if (segSpan >= 2) {
+          seg.fields.discountCol = seg.colStart;
+          seg.fields.priceCol = seg.colStart + 1;
+        }
+      }
+    }
+  }
+
+  // Parse items
+  const items = [];
+  for (let rowIdx = 0; rowIdx < dataRows.length; rowIdx++) {
+    const row = dataRows[rowIdx];
+    if (!Array.isArray(row)) continue;
+    if (row.every(isEmpty)) continue;
+    const item = {};
+    for (const fc of fixedCols) {
+      const rawVal = row[fc.col];
+      if (fc.asNumber) { const v = coerceValue(rawVal); if (v !== null) item[fc.key] = v; }
+      else { const s = String(rawVal || '').trim(); if (s) item[fc.key] = s; }
+    }
+    if (Object.keys(item).length === 0) continue;
+    for (const period of periods) {
+      const prom = {};
+      for (const seg of period.custs) {
+        const data = {};
+        if (seg.fields.discountCol !== undefined) {
+          const dv = coerceValue(row[seg.fields.discountCol]);
+          if (typeof dv === 'number') data.discount = dv;
+        }
+        if (seg.fields.priceCol !== undefined) {
+          const pv = coerceValue(row[seg.fields.priceCol]);
+          if (typeof pv === 'number') data.finalPrice = pv;
+        }
+        if (seg.fields.giftCol !== undefined) {
+          const gift = String(row[seg.fields.giftCol] || '').trim();
+          if (gift) data.gift = gift;
+        }
+        if (Object.keys(data).length > 0) prom[seg.type] = data;
+      }
+      if (Object.keys(prom).length > 0) {
+        if (!item.promotions) item.promotions = {};
+        item.promotions[period.name] = prom;
+      }
+    }
+    items.push(item);
+  }
+  return { periods, items };
 }
 
 function forwardFillTopclass(items) {
@@ -382,7 +506,7 @@ export default async function handler(req, res) {
   const today = getTodayGMT7();
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout (Apps Script cần ~9s)
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout (Apps Script cần ~15s)
 
     const fetchRes = await fetch(APPS_SCRIPT_URL, {
       redirect: 'follow',
@@ -422,6 +546,7 @@ export default async function handler(req, res) {
     const topclassPromotions = parseTopclassPromotions(raw.topclass);
     forwardFillTopclass(topclassPromotions.items);
     const giasuPromotions = parseGiasuPromotions(raw.giasu);
+    const vactPromotions = raw.vact ? parseVactPromotions(raw.vact) : { periods: [], items: [] };
 
     // Enrich catalogs with promotion data
     enrichCatalogWithPromotions(catalogs.topuni, topuniPromotions.items, matchTopuniCatalog);
@@ -432,6 +557,7 @@ export default async function handler(req, res) {
     const tuActive = topuniPromotions.periods.filter(p => isActive(today, p.dateRange));
     const tcActive = topclassPromotions.periods.filter(p => isActive(today, p.dateRange));
     const gsActive = giasuPromotions.periods.filter(p => isActive(today, p.dateRange));
+    const vaActive = vactPromotions.periods.filter(p => isActive(today, p.dateRange));
 
     const body = {
       status: 'ok', fetchedAt: raw.updatedAt || new Date().toISOString(),
@@ -440,7 +566,8 @@ export default async function handler(req, res) {
       promotions: {
         topuni: { periods: topuniPromotions.periods, activePeriods: tuActive.map(p => p.name), items: topuniPromotions.items },
         topclass: { periods: topclassPromotions.periods, activePeriods: tcActive.map(p => p.name), items: topclassPromotions.items },
-        giasu: { periods: giasuPromotions.periods, activePeriods: gsActive.map(p => p.name), items: giasuPromotions.items }
+        giasu: { periods: giasuPromotions.periods, activePeriods: gsActive.map(p => p.name), items: giasuPromotions.items },
+        vact: { periods: vactPromotions.periods, activePeriods: vaActive.map(p => p.name), items: vactPromotions.items }
       }
     };
     responseCache = { data: body, expiresAt: Date.now() + RESPONSE_CACHE_TTL_MS };
