@@ -146,10 +146,14 @@ function fieldNameToKey(label) {
   return null;
 }
 
-function parseSheetPromotions(rows, fixedColMap) {
+function parseSheetPromotions(rows, fixedColMap, statusCol) {
   if (!Array.isArray(rows) || rows.length < 4 || !Array.isArray(fixedColMap) || fixedColMap.length === 0) {
     return { periods: [], items: [] };
   }
+  // Cột trạng thái ("TRẠNG THÁI") có thể đặt bất kỳ đâu sau vùng cột cố định.
+  // Khi quét period/cust/field, skip cột đó (không tính nó là period, không gán field).
+  const statusIdx = (typeof statusCol === 'number' && statusCol >= 0) ? statusCol : findStatusCol(rows);
+  const isStatusCol = (c) => statusIdx >= FIXED && c === statusIdx;
   const mainHdr = rows[0];
   const subHdr = rows[1];
   const custHdr = rows[2];
@@ -158,6 +162,7 @@ function parseSheetPromotions(rows, fixedColMap) {
   const FIXED = Math.max(...fixedColMap.map(fc => fc.col)) + 1;
   const periods = [];
   for (let c = FIXED; c < totalCols; c++) {
+    if (isStatusCol(c)) continue;
     const v = String(mainHdr[c] || '').trim();
     if (v) {
       periods.push({ name: v, type: getPromotionType(v), dateRange: extractDateRange(v), colStart: c, colEnd: totalCols });
@@ -168,6 +173,7 @@ function parseSheetPromotions(rows, fixedColMap) {
     period.custs = [];
     let currentCust = null;
     for (let c = period.colStart; c < period.colEnd && c < totalCols; c++) {
+      if (isStatusCol(c)) continue;
       const v = String(custHdr[c] || '').trim();
       if (v) {
         currentCust = determineCustomerType(v);
@@ -178,7 +184,8 @@ function parseSheetPromotions(rows, fixedColMap) {
       if (i < period.custs.length - 1) period.custs[i].colEnd = period.custs[i + 1].colStart;
     }
     for (const seg of period.custs) {
-      for (let c = seg.colStart; c < seg.colEnd; c++) {
+      for (let c = seg.colStart; c < seg.colEnd && c < totalCols; c++) {
+        if (isStatusCol(c)) continue;
         const f = String(subHdr[c] || '').trim();
         if (!f) continue;
         const key = fieldNameToKey(f);
@@ -234,6 +241,8 @@ function parseSheetPromotions(rows, fixedColMap) {
         item.promotions[period.name] = prom;
       }
     }
+    // Bỏ dòng bị đánh dấu ngừng bán (TRẠNG THÁI = Deactive) — dữ liệu web chỉ lấy gói active
+    if (isItemDeactivated(statusIdx, row)) continue;
     items.push(item);
   }
   return { periods, items };
@@ -288,8 +297,9 @@ function parseGiasuPromotions(rows) {
 }
 
 // V-ACT: dedicated parser — xử lý fallback khi sub-header / cust-header trống
-function parseVactPromotions(rows) {
+function parseVactPromotions(rows, statusCol) {
   if (!Array.isArray(rows) || rows.length < 4) return { periods: [], items: [] };
+  const statusIdx = (typeof statusCol === 'number' && statusCol >= 0) ? statusCol : findStatusCol(rows);
   const mainHdr = rows[0];
   const subHdr = rows[1] || [];
   const custHdr = rows[2] || [];
@@ -306,9 +316,14 @@ function parseVactPromotions(rows) {
     { col: 4, key: 'listPrice', asNumber: true }
   ];
 
+  // Cột trạng thái ("TRẠNG THÁI") có thể đặt bất kỳ đâu sau vùng cột cố định.
+  // Khi quét period/cust/field, skip cột đó.
+  const isStatusCol = (c) => statusIdx >= FIXED && c === statusIdx;
+
   // Parse periods from mainHdr
   const periods = [];
   for (let c = FIXED; c < totalCols; c++) {
+    if (isStatusCol(c)) continue;
     const v = String(mainHdr[c] || '').trim();
     if (v) {
       periods.push({ name: v, type: 'normal', dateRange: extractDateRange(v), colStart: c, colEnd: totalCols });
@@ -321,6 +336,7 @@ function parseVactPromotions(rows) {
     period.custs = [];
     let currentCust = null;
     for (let c = period.colStart; c < period.colEnd && c < totalCols; c++) {
+      if (isStatusCol(c)) continue;
       const cv = String(custHdr[c] || '').trim();
       if (cv) {
         currentCust = determineCustomerType(cv);
@@ -344,6 +360,7 @@ function parseVactPromotions(rows) {
     // Detect fields from subHdr
     for (const seg of period.custs) {
       for (let c = seg.colStart; c < seg.colEnd && c < totalCols; c++) {
+        if (isStatusCol(c)) continue;
         const f = String(subHdr[c] || '').trim();
         if (!f) continue;
         const key = fieldNameToKey(f);
@@ -398,6 +415,8 @@ function parseVactPromotions(rows) {
         item.promotions[period.name] = prom;
       }
     }
+    // Bỏ dòng bị đánh dấu ngừng bán (TRẠNG THÁI = Deactive)
+    if (isItemDeactivated(statusIdx, row)) continue;
     items.push(item);
   }
   return { periods, items };
@@ -432,9 +451,59 @@ function parseSessionsFromName(name) {
   return m ? parseInt(m[1], 10) : null;
 }
 
+// =========================================================================
+// Trạng thái gói (active/deactive) — cột "TRẠNG THÁI" trong Google Sheet
+// =========================================================================
+// Tự phát hiện cột trạng thái dựa trên header (hàng 0, fallback hàng 1 — không phụ thuộc vị trí cột).
+// Dòng để trống / thiếu cột → mặc định Active (không phá dữ liệu cũ).
+function findStatusCol(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return -1;
+  const scan = (hdr) => {
+    if (!Array.isArray(hdr)) return -1;
+    for (let c = 0; c < hdr.length; c++) {
+      const v = String(hdr[c] || '').trim().toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      if (!v) continue;
+      // Nhận "trạng thái", "trạng thái sản phẩm", "tình trạng", "status", "active"…
+      if (/^(trang thai|trangthai|tinh trang|tinhtrang|status|active)/.test(v)) return c;
+    }
+    return -1;
+  };
+  const main = scan(rows[0]);
+  if (main >= 0) return main;
+  // Fallback: tìm ở sub-header (hàng 1) — hỗ trợ sheet đặt nhãn ở hàng phụ
+  return rows.length >= 2 ? scan(rows[1]) : -1;
+}
+
+function isItemDeactivated(statusCol, row) {
+  if (statusCol < 0) return false;
+  const v = String((row && row[statusCol]) || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (!v) return false;
+  return /^(deactiv|ngung|khong|off|0$|no$)/.test(v) || v === 'inactive';
+}
+
 // Matching functions - match catalog item with promotion item
+function getExamTokens(s) {
+  const up = String(s || '').toUpperCase();
+  const tokens = [];
+  if (/TN[\s\-]*THPT/.test(up)) tokens.push('TNTHPT');
+  if (/\bTSA\b/.test(up)) tokens.push('TSA');
+  if (/\bHSA\b/.test(up)) tokens.push('HSA');
+  if (/\bQDA\b/.test(up)) tokens.push('QDA');
+  return tokens;
+}
+
 function matchTopuniCatalog(cat, pro) {
-  return Number(cat.listPrice) > 0 && Number(cat.listPrice) === Number(pro.listPrice);
+  if (Number(cat.listPrice) <= 0 || Number(cat.listPrice) !== Number(pro.listPrice)) return false;
+  const catTokens = getExamTokens(cat.name);
+  const proTokens = getExamTokens((pro.packageName || '') + ' ' + (pro.productName || ''));
+  // Không có token kỳ thi ở 1 phía → fallback match theo giá (giữ nguyên hành vi cũ)
+  if (catTokens.length === 0 || proTokens.length === 0) return true;
+  // Promo bao phủ toàn bộ kỳ thi (VD "Chọn 1 trong các kỳ thi: TN THPT/TSA/HSA/QDA") → match mọi biến thể
+  if (proTokens.length >= 4) return true;
+  // Promo chỉ áp dụng cho 1 kỳ thi cụ thể → phải trùng kỳ thi (VD VIP HSA lớp 2 ≠ VIP TSA lớp 2)
+  return proTokens.some(t => catTokens.includes(t));
 }
 function matchTopclassCatalog(cat, pro) {
   if (!pro.productType || !pro.feePackage) return false;
@@ -587,3 +656,16 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Export helpers cho test cục bộ (không ảnh hưởng production runner)
+export const __test = {
+  findStatusCol,
+  isItemDeactivated,
+  parseSheetPromotions,
+  parseVactPromotions,
+  parseTopuniPromotions,
+  parseTopclassPromotions,
+  parseGiasuPromotions,
+  forwardFillTopclass,
+  getTopuniPromotions: (rows) => parseTopuniPromotions(rows)
+};
