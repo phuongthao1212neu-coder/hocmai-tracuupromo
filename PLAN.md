@@ -625,6 +625,7 @@ function showRoleInfo() {
 
 | Hạng mục | Ngày | Ghi chú |
 |----------|------|---------|
+| **Combo VIP lớp 2 + Luyện đề TN THPT** | 05/09/2026 | Combo "Giải pháp VIP 1 kỳ thi riêng - lớp 2 + Luyện đề TN THPT (4 môn)" (VIP TSA/QDA/HSA lớp 2 + Luyện đề 4 môn). Fix `index.html`: nhóm `vipLop2Items`, loại "riêng" khỏi combo cũ (tránh match nhầm), flag `noMerge` giữ 2 dòng riêng. KH mới vàng 33% → 4.690.000đ + 2.345.000đ, KH cũ 36% → 6.720.000đ. |
 | **Cột TRẠNG THÁI (active/deactive gói bán)** | 04/09/2026 | Thêm cột "TRẠNG THÁI" vào Google Sheet (đặt ở đâu cũng được, sau 5 cột cố định). Gói ghi "Deactive"/"Ngừng bán"/"Không bán" → tự ẩn khỏi web Tra cứu + Tính học phí. Dòng trống = Active. Chỉ sửa `api/policies.js` (findStatusCol + isItemDeactivated + skip cột khi quét period), frontend không đổi. Test `test-status-col.mjs` 44 assertions. Backup: `D:\HOCMAI\Tracuupromo_backup_20260904_113822`. |
 | **Gửi mail tự động thông báo ưu đãi** | 28/06/2026 | 2 cron jobs: 22h30 notify Telegram + 00h25 send. Mail từ thaonp@hocmai.vn. Đầu tháng mail mới, ngày vàng reply. Duyệt qua Telegram "GỬI MAIL". |
 
