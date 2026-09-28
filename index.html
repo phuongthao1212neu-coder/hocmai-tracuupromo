@@ -1214,6 +1214,123 @@
     return results;
   }
 
+  // ─── CODING COMBO LOGIC ──────────────────────────────────────────
+  // DATA-DRIVEN: chọn SP lẻ đủ điều kiện combo → tự gộp + áp ưu đãi combo
+  // (giống Topuni). Mỗi series Coding có dải sản phẩm đánh số; combo theo dải
+  // liên tiếp ("1+2", "2+3+4"...), "toàn diện" = full dải, SCR "12" = SCR1+SCR2.
+  function getCodingSeries(name) {
+    var s = String(name || '').toLowerCase();
+    if (s.indexOf('codecombat') >= 0) return 'codecombat';
+    if (s.indexOf('scr') >= 0) return 'scr';
+    if (s.indexOf('pro') >= 0) return 'pro';
+    if (s.indexOf('web') >= 0) return 'web';
+    return null;
+  }
+
+  function getCodingNums(name, series, group) {
+    var m = String(name || '').match(/(\d+(?:\+\d+)*)$/);
+    if (!m) return [];
+    var raw = m[1];
+    if (raw.indexOf('+') >= 0) return raw.split('+').map(Number);
+    var whole = Number(raw);
+    var groupNums = {};
+    for (var i = 0; i < group.length; i++) groupNums[group[i].num] = true;
+    if (groupNums[whole]) return [whole];
+    // SCR "12" khi chỉ có item 1 và 2 → tách từng chữ số
+    var chars = raw.split('');
+    var allDigits = chars.every(function(ch) { return groupNums[Number(ch)]; });
+    if (raw.length > 1 && allDigits) return chars.map(Number);
+    return [whole];
+  }
+
+  function matchCodingPackages(selected, promoItems, activePeriods, custType, codeField) {
+    var groups = {}; // series -> [{item, num}]
+    var other = [];
+    for (var i = 0; i < selected.length; i++) {
+      var item = selected[i];
+      var series = getCodingSeries(item.name || '');
+      if (!series) { other.push(item); continue; }
+      var m = String(item.name).match(/(\d+)$/);
+      var num = m ? Number(m[1]) : null;
+      if (num == null) { other.push(item); continue; }
+      if (!groups[series]) groups[series] = [];
+      groups[series].push({ item: item, num: num });
+    }
+
+    var results = [];
+    var seriesKeys = Object.keys(groups);
+    for (var s = 0; s < seriesKeys.length; s++) {
+      var series = seriesKeys[s];
+      var group = groups[series].slice().sort(function(a, b) { return a.num - b.num; });
+      var used = {};
+
+      var progressed = true;
+      while (progressed) {
+        progressed = false;
+        var remaining = [];
+        for (var r = 0; r < group.length; r++) {
+          if (!used[group[r].item]) remaining.push(group[r]);
+        }
+        if (remaining.length < 2) break;
+        var remainingNums = {};
+        for (var rn = 0; rn < remaining.length; rn++) remainingNums[remaining[rn].num] = true;
+
+        var best = null;
+        for (var p = 0; p < promoItems.length; p++) {
+          var pn = String(promoItems[p].name || '');
+          if (pn.indexOf('Combo ') !== 0) continue;
+          if (getCodingSeries(pn) !== series) continue;
+          var nums = getCodingNums(pn, series, remaining);
+          if (nums.length < 2) continue;
+          var allPresent = nums.every(function(n) { return remainingNums[n]; });
+          if (!allPresent) continue;
+          if (!best || nums.length > best.nums.length ||
+              (nums.length === best.nums.length && (promoItems[p].listPrice || 0) > (best.comboItem.listPrice || 0))) {
+            best = { comboItem: promoItems[p], nums: nums };
+          }
+        }
+        if (!best) break;
+
+        var promo = getBestPromoForItem(best.comboItem, activePeriods, custType, codeField);
+        if (!promo) break;
+
+        var matchedItems = [];
+        for (var mi = 0; mi < remaining.length; mi++) {
+          if (best.nums.indexOf(remaining[mi].num) >= 0) matchedItems.push(remaining[mi]);
+        }
+        if (matchedItems.length < 2) break;
+        var sumPrice = 0;
+        for (var sp = 0; sp < matchedItems.length; sp++) sumPrice += (matchedItems[sp].item.listPrice || 0);
+        var finalPrice = promo && promo.discount != null
+          ? applyDiscount(sumPrice, promo)
+          : sumPrice;
+        results.push({
+          items: matchedItems.map(function(g) { return g.item; }),
+          listPrice: sumPrice,
+          promo: promo,
+          finalPrice: finalPrice,
+          savings: promo ? (sumPrice - finalPrice) : 0,
+          isCombo: true,
+          comboName: best.comboItem.name
+        });
+        for (var mu = 0; mu < matchedItems.length; mu++) used[matchedItems[mu].item] = true;
+        progressed = true;
+      }
+
+      for (var g2 = 0; g2 < group.length; g2++) {
+        if (used[group[g2].item]) continue;
+        var promoI = getBestPromoForItem(group[g2].item, activePeriods, custType, codeField);
+        results.push({ items: [group[g2].item], listPrice: group[g2].item.listPrice || 0, promo: promoI, isCombo: false });
+      }
+    }
+
+    for (var o2 = 0; o2 < other.length; o2++) {
+      var promoO = getBestPromoForItem(other[o2], activePeriods, custType, codeField);
+      results.push({ items: [other[o2]], listPrice: other[o2].listPrice || 0, promo: promoO, isCombo: false });
+    }
+    return results;
+  }
+
   // ─── TOPCLASS TYPE+QUANTITY LOGIC ──────────────────────────────────
   function matchTopclassPackages(selected, promoItems, activePeriods, custType, codeField, periodType) {
     // Group selected items by productType + feePackage (cùng loại SP + cùng gói HP)
@@ -1325,8 +1442,10 @@
       matchedResults = matchTopuniPackages(selected, promoItems, activePeriods, custType, codeField);
     } else if (cat === 'topclass') {
       matchedResults = matchTopclassPackages(selected, promoItems, activePeriods, custType, codeField, periodType);
-    } else {
-      // giasu: individual items
+    } else if (cat === 'coding') {
+          matchedResults = matchCodingPackages(selected, promoItems, activePeriods, custType, codeField);
+        } else {
+          // giasu: individual items
       for (var i = 0; i < selected.length; i++) {
         var item = selected[i];
         var lp = item.listPrice || item.totalListPrice || 0;
