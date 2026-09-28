@@ -108,6 +108,7 @@
         <button class="cat-tab" data-cat="vact">V-ACT</button>
         <button class="cat-tab" data-cat="topclass">Topclass</button>
         <button class="cat-tab" data-cat="giasu">Gia sư</button>
+        <button class="cat-tab" data-cat="coding">Coding</button>
       </div>
       <div class="search-bar">
         <span class="search-icon">🔍</span>
@@ -129,6 +130,10 @@
         <div class="tab-banner" id="bannerGiasu"></div>
         <div class="table-wrapper" id="tableWrapGiasu"></div>
       </div>
+      <div class="cat-panel" data-catpanel="coding">
+        <div class="tab-banner" id="bannerCoding"></div>
+        <div class="table-wrapper" id="tableWrapCoding"></div>
+      </div>
     </div>
 
     <!-- ═══════ TAB: TÍNH HỌC PHÍ ═══════ -->
@@ -138,6 +143,7 @@
         <button class="cat-tab" data-cat="vact">V-ACT</button>
         <button class="cat-tab" data-cat="topclass">Topclass</button>
         <button class="cat-tab" data-cat="giasu">Gia sư</button>
+        <button class="cat-tab" data-cat="coding">Coding</button>
       </div>
       <div class="cat-panel active" data-catpanel="topuni">
         <div class="calc-layout" id="calcPanelTopuni">
@@ -236,6 +242,25 @@
             <div class="result-area" id="calcResultGiasu">
               <div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div>
             </div>
+          </div>
+        </div>
+      </div>
+      <div class="cat-panel" data-catpanel="coding">
+        <div class="calc-layout" id="calcPanelCoding">
+          <div class="calc-left">
+            <div class="calc-header-row">
+              <div class="calc-count" id="prodCountCoding">0 sản phẩm</div>
+              <div class="calc-search"><input type="text" class="calc-search-input" data-cat="coding" placeholder="🔍 Tìm sản phẩm..."></div>
+            </div>
+            <div class="cust-type-selector" id="custTypeCoding">
+              <label class="cust-type-option"><input type="radio" name="custTypeCoding" value="new"> <span>KH mới</span></label>
+              <label class="cust-type-option"><input type="radio" name="custTypeCoding" value="old"> <span>KH cũ</span></label>
+            </div>
+            <ul class="prod-list" id="prodListCoding"></ul>
+          </div>
+          <div class="calc-right">
+            <div class="calc-actions"><button class="btn-calc" id="btnCalcCoding" disabled>🧮 Tính học phí</button><button class="btn-clear" id="btnClearCoding">✕ Xóa chọn</button></div>
+            <div class="result-area" id="calcResultCoding"><div class="empty-state"><div class="empty-icon">🧮</div><p>Chọn loại KH → chọn sản phẩm → nhấn <strong>TÍNH HỌC PHÍ</strong></p></div></div>
           </div>
         </div>
       </div>
@@ -382,10 +407,10 @@
     $('#loginError').textContent = '';
     // Clear cart & filter state
     SEARCH_QUERY = '';
-    CALC_FILTERS = { topuni: '', topclass: '', giasu: '' };
+    CALC_FILTERS = { topuni: '', topclass: '', giasu: '', coding: '' };
     CALC_ADV_FILTERS.topclass.grades = [];
     CALC_ADV_FILTERS.topclass.subjects = [];
-    ['topuni', 'topclass', 'giasu'].forEach(cat => {
+    ['topuni', 'topclass', 'giasu', 'coding'].forEach(cat => {
       const cap = cat.charAt(0).toUpperCase() + cat.slice(1);
       const list = document.getElementById('prodList' + cap);
       if (list) list.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.dispatchEvent(new Event('change')); });
@@ -429,8 +454,8 @@
       APP_DATA = data;
       $('#dataDate').textContent = data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('vi-VN') : data.today;
       renderTabBanner('topuni'); // banner theo tab đầu tiên
-      ['topuni', 'topclass', 'giasu', 'vact'].forEach(c => buildPromoTable(c));
-      ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
+      ['topuni', 'topclass', 'giasu', 'vact', 'coding'].forEach(c => buildPromoTable(c));
+      ['topuni', 'topclass', 'giasu', 'coding'].forEach(c => renderCalcProductList(c));
       hideLoading();
     } catch (err) {
       clearTimeout(fetchTimeout);
@@ -497,6 +522,7 @@
     if (cat === 'vact') return ['Gói ưu đãi', 'Thời gian khai giảng', 'Mô tả', 'Học phí'];
     if (cat === 'topclass') return ['Loại SP', 'Gói HP', 'Khối lớp', 'Môn học', 'Số lượng/\nLần Đăng kí'];
     if (cat === 'giasu') return ['Loại SP', 'Số buổi', 'HP/buổi', 'Tổng HP'];
+    if (cat === 'coding') return ['Sản phẩm', 'Thông tin', 'Học phí'];
     return [];
   }
 
@@ -532,6 +558,13 @@
         item.sessions || '—',
         formatPrice(item.pricePerSession),
         formatPrice(item.totalListPrice)
+      ];
+    }
+    if (cat === 'coding') {
+      return [
+        item.name || '—',
+        [item.productLine, item.sessions ? item.sessions + ' buổi' : '', item.subject].filter(Boolean).join('<br>') || '—',
+        formatPrice(item.listPrice)
       ];
     }
     return [];
@@ -660,7 +693,7 @@
     for (const p of periods) {
       const pType = p.type || 'unknown';
       // DS role Gia sư: CHỈ hiện cột "KH mới" (new), thay vì Mọi KH
-      if (ROLE === 'ds' && cat === 'giasu') {
+      if ((cat === 'giasu' || cat === 'coding') && ROLE === 'ds') {
         periodColumns.push({ period: p, cust: { type: 'new' }, pType, ctype: 'new', ctypeLabel: 'KH mới' });
       } else {
         const custs = p.custs || [];
@@ -693,7 +726,7 @@
       const pType = p.type || 'unknown';
       let custCount = (p.custs || []).length || 1;
       // DS role Gia sư: chỉ 1 cột KH mới
-      if (ROLE === 'ds' && cat === 'giasu') custCount = 1;
+      if (ROLE === 'ds' && (cat === 'giasu' || cat === 'coding')) custCount = 1;
       // TVV Gia sư: BỎ +1 cho cột Mọi KH
       // else if (cat === 'giasu') {
       //   var hasAll2 = (p.custs || []).some(function(c) { return c.type === 'all'; });
@@ -763,7 +796,7 @@
   }
 
   // ─── CALC SEARCH ──────────────────────────────────────────────────
-  let CALC_FILTERS = { topuni: '', topclass: '', giasu: '' };
+  let CALC_FILTERS = { topuni: '', topclass: '', giasu: '', coding: '' };
   const CALC_ADV_FILTERS = { topclass: { grades: [], subjects: [] } };
 
   function getCalcCatalog(cat) {
@@ -900,7 +933,7 @@
   function getCalcProductName(cat, item) {
     if (cat === 'topuni') return item.name || item.packageName || '—';
     if (cat === 'topclass') return item.name || `${item.productType || ''} ${item.feePackage || ''}`.trim() || '—';
-    if (cat === 'giasu') return item.name || '—';
+    if (cat === 'giasu' || cat === 'coding') return item.name || item.packageName || '—';
     return '—';
   }
 
@@ -908,6 +941,7 @@
     if (cat === 'topuni') return '';
     if (cat === 'topclass') return `${item.gradeLevel || ''} ${item.subject || ''} | ${item.form || ''}`.trim() || '';
     if (cat === 'giasu') return '';
+    if (cat === 'coding') return [item.productLine, item.sessions ? item.sessions + ' buổi' : '', item.subject].filter(Boolean).join(' · ');
     return '';
   }
 
@@ -1161,10 +1195,15 @@
       results.push({ items: [tieuChuanVipItems[p2]], listPrice: tieuChuanVipItems[p2].listPrice || 0, promo: bi2, isCombo: false });
     }
     // Luyện đề TN còn dư
-    for (var ld = 0; ld < luyenDeTnItems.length; ld++) {
-      var biLd = getBestPromoForItem(luyenDeTnItems[ld], activePeriods, custType, codeField);
-      results.push({ items: [luyenDeTnItems[ld]], listPrice: luyenDeTnItems[ld].listPrice || 0, promo: biLd, isCombo: false });
-    }
+        for (var ld = 0; ld < luyenDeTnItems.length; ld++) {
+          var biLd = getBestPromoForItem(luyenDeTnItems[ld], activePeriods, custType, codeField);
+          results.push({ items: [luyenDeTnItems[ld]], listPrice: luyenDeTnItems[ld].listPrice || 0, promo: biLd, isCombo: false });
+        }
+        // VIP lớp 2 còn dư (chưa kết hợp Luyện đề): tính riêng lẻ với ưu đãi của từng sản phẩm
+        for (var vl2 = 0; vl2 < vipLop2Items.length; vl2++) {
+          var bvl = getBestPromoForItem(vipLop2Items[vl2], activePeriods, custType, codeField);
+          results.push({ items: [vipLop2Items[vl2]], listPrice: vipLop2Items[vl2].listPrice || 0, promo: bvl, isCombo: false });
+        }
     // Toàn diện TN + Tiêu chuẩn TN
     var tnItems = toanDienTnItems.concat(tieuChuanTnItems);
     for (var q = 0; q < tnItems.length; q++) {
@@ -1268,11 +1307,11 @@
 
     var periodType = getActivePeriodType(cat);
     var codeField = CREDENTIALS[ROLE].codeField;
-    // DS role Gia sư: dùng mã cart (code) thay vì amsCode
-    if (ROLE === 'ds' && cat === 'giasu') codeField = 'code';
+    // DS role Gia sư/Coding: dùng mã cart (code) thay vì amsCode
+    if (ROLE === 'ds' && (cat === 'giasu' || cat === 'coding')) codeField = 'code';
     var codeLabel = CREDENTIALS[ROLE].codeLabel;
-    // DS role Gia sư: hiển thị mã Cart
-    if (ROLE === 'ds' && cat === 'giasu') codeLabel = 'Mã Cart';
+    // DS role Gia sư/Coding: hiển thị mã Cart
+    if (ROLE === 'ds' && (cat === 'giasu' || cat === 'coding')) codeLabel = 'Mã Cart';
     var promoItems = promo.items || [];
 
     // === PRIORITY RULE: Golden day > Normal day ===
@@ -1558,7 +1597,7 @@
           $('#panelLookup').classList.add('active');
         } else if (tab === 'calc') {
           $('#panelCalc').classList.add('active');
-          ['topuni', 'topclass', 'giasu'].forEach(c => renderCalcProductList(c));
+          ['topuni', 'topclass', 'giasu', 'coding'].forEach(c => renderCalcProductList(c));
         } else if (tab === 'timetable') {
           $('#panelTimetable').classList.add('active');
         }
@@ -1662,7 +1701,7 @@
     });
 
     // Calc buttons
-    ['topuni', 'topclass', 'giasu'].forEach(cat => {
+    ['topuni', 'topclass', 'giasu', 'coding'].forEach(cat => {
       const btnId = 'btnCalc' + cat.charAt(0).toUpperCase() + cat.slice(1);
       const clearId = 'btnClear' + cat.charAt(0).toUpperCase() + cat.slice(1);
       const btn = $('#' + btnId);

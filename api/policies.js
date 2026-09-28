@@ -296,6 +296,15 @@ function parseGiasuPromotions(rows) {
   ]);
 }
 
+// Coding2027: 6 cột cố định trước các nhóm ưu đãi.
+function parseCodingPromotions(rows) {
+  return parseSheetPromotions(rows, [
+    { col: 0, key: 'productLine' }, { col: 1, key: 'name' },
+    { col: 2, key: 'sessions', asNumber: true }, { col: 3, key: 'subject' },
+    { col: 4, key: 'pricePerSession', asNumber: true }, { col: 5, key: 'listPrice', asNumber: true }
+  ]);
+}
+
 // V-ACT: dedicated parser — xử lý fallback khi sub-header / cust-header trống
 function parseVactPromotions(rows, statusCol) {
   if (!Array.isArray(rows) || rows.length < 4) return { periods: [], items: [] };
@@ -536,6 +545,12 @@ function matchGiasuCatalog(cat, pro) {
   return Number(cat.listPrice) > 0 && Number(cat.listPrice) === Number(pro.totalListPrice);
 }
 
+function matchCodingCatalog(cat, pro) {
+  return String(cat.name || '').trim().toLowerCase() === String(pro.name || '').trim().toLowerCase()
+    && Number(cat.listPrice) > 0
+    && Number(cat.listPrice) === Number(pro.listPrice);
+}
+
 function enrichCatalogWithPromotions(catalogItems, promotionItems, matchFn) {
   for (const cat of catalogItems) {
     cat.promotions = {};
@@ -607,7 +622,8 @@ export default async function handler(req, res) {
     const catalogs = {
       topuni: parseCatalog(raw.topuni_catalog),
       topclass: parseCatalog(raw.topclass_catalog),
-      giasu: parseCatalog(raw.giasu_catalog)
+      giasu: parseCatalog(raw.giasu_catalog),
+      coding: parseCatalog(raw.coding_catalog)
     };
 
     // Parse promotions from promo sheets
@@ -615,17 +631,20 @@ export default async function handler(req, res) {
     const topclassPromotions = parseTopclassPromotions(raw.topclass);
     forwardFillTopclass(topclassPromotions.items);
     const giasuPromotions = parseGiasuPromotions(raw.giasu);
+    const codingPromotions = parseCodingPromotions(raw.coding);
     const vactPromotions = raw.vact ? parseVactPromotions(raw.vact) : { periods: [], items: [] };
 
     // Enrich catalogs with promotion data
     enrichCatalogWithPromotions(catalogs.topuni, topuniPromotions.items, matchTopuniCatalog);
     enrichCatalogWithPromotions(catalogs.topclass, topclassPromotions.items, matchTopclassCatalog);
     enrichCatalogWithPromotions(catalogs.giasu, giasuPromotions.items, matchGiasuCatalog);
+    enrichCatalogWithPromotions(catalogs.coding, codingPromotions.items, matchCodingCatalog);
 
     // Get active periods for each category
     const tuActive = topuniPromotions.periods.filter(p => isActive(today, p.dateRange));
     const tcActive = topclassPromotions.periods.filter(p => isActive(today, p.dateRange));
     const gsActive = giasuPromotions.periods.filter(p => isActive(today, p.dateRange));
+    const coActive = codingPromotions.periods.filter(p => isActive(today, p.dateRange));
     const vaActive = vactPromotions.periods.filter(p => isActive(today, p.dateRange));
 
     const body = {
@@ -636,6 +655,7 @@ export default async function handler(req, res) {
         topuni: { periods: topuniPromotions.periods, activePeriods: tuActive.map(p => p.name), items: topuniPromotions.items },
         topclass: { periods: topclassPromotions.periods, activePeriods: tcActive.map(p => p.name), items: topclassPromotions.items },
         giasu: { periods: giasuPromotions.periods, activePeriods: gsActive.map(p => p.name), items: giasuPromotions.items },
+        coding: { periods: codingPromotions.periods, activePeriods: coActive.map(p => p.name), items: codingPromotions.items },
         vact: { periods: vactPromotions.periods, activePeriods: vaActive.map(p => p.name), items: vactPromotions.items }
       }
     };
