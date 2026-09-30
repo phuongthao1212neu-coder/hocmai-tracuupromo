@@ -109,6 +109,7 @@
         <button class="cat-tab" data-cat="topclass">Topclass</button>
         <button class="cat-tab" data-cat="giasu">Gia sư</button>
         <button class="cat-tab" data-cat="coding">Coding</button>
+        <button class="cat-tab" data-cat="mentor">Mentor</button>
       </div>
       <div class="search-bar">
         <span class="search-icon">🔍</span>
@@ -133,6 +134,10 @@
       <div class="cat-panel" data-catpanel="coding">
         <div class="tab-banner" id="bannerCoding"></div>
         <div class="table-wrapper" id="tableWrapCoding"></div>
+      </div>
+      <div class="cat-panel" data-catpanel="mentor">
+        <div class="tab-banner" id="bannerMentor"></div>
+        <div class="table-wrapper" id="tableWrapMentor"></div>
       </div>
     </div>
 
@@ -380,10 +385,15 @@
     const cred = CREDENTIALS[selectedRole];
     $('#timetableHintText').textContent = 'Tài khoản: ' + cred.ttUser + ' | Mật khẩu: ' + cred.ttPass;
     // Reset về tab mặc định: Tra cứu ưu đãi + Topuni
-    $$('.tab-btn').forEach(b => b.classList.remove('active'));
-    $('#tabLookup').classList.add('active');
-    $$('.panel').forEach(p => p.classList.remove('active'));
-    $('#panelLookup').classList.add('active');
+        $$('.tab-btn').forEach(b => b.classList.remove('active'));
+        $('#tabLookup').classList.add('active');
+        $$('.panel').forEach(p => p.classList.remove('active'));
+        $('#panelLookup').classList.add('active');
+        // Tab Mentor chỉ hiện cho TVV — ẩn hoàn toàn với Đại sứ (ADC)
+        const mentorTab = $('#catTabsLookup .cat-tab[data-cat="mentor"]');
+        if (mentorTab) mentorTab.style.display = (selectedRole === 'ds') ? 'none' : '';
+        const mentorPanel = $('#panelLookup .cat-panel[data-catpanel="mentor"]');
+        if (mentorPanel) mentorPanel.classList.remove('active');
     ['#catTabsLookup', '#catTabsCalc'].forEach(sel => {
       $$(sel + ' .cat-tab').forEach(b => b.classList.remove('active'));
       $(sel + ' .cat-tab[data-cat="topuni"]').classList.add('active');
@@ -454,7 +464,7 @@
       APP_DATA = data;
       $('#dataDate').textContent = data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('vi-VN') : data.today;
       renderTabBanner('topuni'); // banner theo tab đầu tiên
-      ['topuni', 'topclass', 'giasu', 'vact', 'coding'].forEach(c => buildPromoTable(c));
+      ['topuni', 'topclass', 'giasu', 'vact', 'coding', 'mentor'].forEach(c => buildPromoTable(c));
       ['topuni', 'topclass', 'giasu', 'coding'].forEach(c => renderCalcProductList(c));
       hideLoading();
     } catch (err) {
@@ -518,15 +528,16 @@
 
   // ─── PROMO TABLE ────────────────────────────────────────────────────
   function getFixedHeaders(cat) {
-    if (cat === 'topuni') return ['Gói ưu đãi', 'Sản phẩm trong gói', 'Mô tả sản phẩm', 'Học phí'];
-    if (cat === 'vact') return ['Gói ưu đãi', 'Thời gian khai giảng', 'Mô tả', 'Học phí'];
-    if (cat === 'topclass') return ['Loại SP', 'Gói HP', 'Khối lớp', 'Môn học', 'Số lượng/\nLần Đăng kí'];
-    if (cat === 'giasu') return ['Loại SP', 'Số buổi', 'HP/buổi', 'Tổng HP'];
-    if (cat === 'coding') return ['Sản phẩm', 'Thông tin', 'Học phí'];
-    return [];
-  }
+      if (cat === 'topuni') return ['Gói ưu đãi', 'Sản phẩm trong gói', 'Mô tả sản phẩm', 'Học phí'];
+      if (cat === 'vact') return ['Gói ưu đãi', 'Thời gian khai giảng', 'Mô tả', 'Học phí'];
+      if (cat === 'topclass') return ['Loại SP', 'Gói HP', 'Khối lớp', 'Môn học', 'Số lượng/\nLần Đăng kí'];
+      if (cat === 'giasu') return ['Loại SP', 'Số buổi', 'HP/buổi', 'Tổng HP'];
+      if (cat === 'coding') return ['Sản phẩm', 'Thông tin', 'Học phí'];
+      if (cat === 'mentor') return ['Loại sản phẩm', 'Số buổi', 'HP/buổi', 'HP/khóa'];
+      return [];
+    }
 
-  function getFixedCols(cat, item, idx) {
+    function getFixedCols(cat, item, idx) {
     if (cat === 'topuni') {
       return [
         item.packageName || item.stt || (idx + 1),
@@ -564,6 +575,14 @@
       return [
         item.name || '—',
         [item.productLine, item.sessions ? item.sessions + ' buổi' : '', item.subject].filter(Boolean).join('<br>') || '—',
+        formatPrice(item.listPrice)
+      ];
+    }
+    if (cat === 'mentor') {
+      return [
+        item.name || '—',
+        item.sessions ? item.sessions + ' buổi' : '—',
+        formatPrice(item.pricePerSession),
         formatPrice(item.listPrice)
       ];
     }
@@ -698,10 +717,11 @@
       } else {
         const custs = p.custs || [];
         for (const c of custs) {
-          const ctype = c.type || 'unknown';
-          const ctypeLabel = getCustLabel(ctype);
-          periodColumns.push({ period: p, cust: c, pType, ctype, ctypeLabel });
-        }
+                  const ctype = c.type || 'unknown';
+                  // Mentor: KH mới + KH cũ gộp làm 1 → hiển thị "Mọi KH"
+                  const ctypeLabel = cat === 'mentor' ? 'Mọi KH' : getCustLabel(ctype);
+                  periodColumns.push({ period: p, cust: c, pType, ctype, ctypeLabel });
+                }
         // TVV Gia sư: BỎ thêm cột Mọi KH (all)
         // if (cat === 'giasu') {
         //   var hasAll = custs.some(function(c) { return c.type === 'all'; });

@@ -305,6 +305,17 @@ function parseCodingPromotions(rows) {
   ]);
 }
 
+// Mentor2027: 4 cột cố định + TRẠNG THÁI (cột 4), KH mới = KH cũ gộp làm 1.
+// Loại sản phẩm | Số buổi | HP niêm yết/buổi | HP niêm yết/khóa | TRẠNG THÁI | periods...
+function parseMentorPromotions(rows) {
+  return parseSheetPromotions(rows, [
+    { col: 0, key: 'name' },
+    { col: 1, key: 'sessions', asNumber: true },
+    { col: 2, key: 'pricePerSession', asNumber: true },
+    { col: 3, key: 'listPrice', asNumber: true }
+  ], 4); // cột TRẠNG THÁI cố định vị trí 4 → skip khi scan period + lọc Deactive
+}
+
 // V-ACT: dedicated parser — xử lý fallback khi sub-header / cust-header trống
 function parseVactPromotions(rows, statusCol) {
   if (!Array.isArray(rows) || rows.length < 4) return { periods: [], items: [] };
@@ -632,6 +643,7 @@ export default async function handler(req, res) {
     forwardFillTopclass(topclassPromotions.items);
     const giasuPromotions = parseGiasuPromotions(raw.giasu);
     const codingPromotions = parseCodingPromotions(raw.coding);
+    const mentorPromotions = raw.mentor ? parseMentorPromotions(raw.mentor) : { periods: [], items: [] };
     const vactPromotions = raw.vact ? parseVactPromotions(raw.vact) : { periods: [], items: [] };
 
     // Enrich catalogs with promotion data
@@ -645,6 +657,7 @@ export default async function handler(req, res) {
     const tcActive = topclassPromotions.periods.filter(p => isActive(today, p.dateRange));
     const gsActive = giasuPromotions.periods.filter(p => isActive(today, p.dateRange));
     const coActive = codingPromotions.periods.filter(p => isActive(today, p.dateRange));
+    const meActive = mentorPromotions.periods.filter(p => isActive(today, p.dateRange));
     const vaActive = vactPromotions.periods.filter(p => isActive(today, p.dateRange));
 
     const body = {
@@ -656,6 +669,7 @@ export default async function handler(req, res) {
         topclass: { periods: topclassPromotions.periods, activePeriods: tcActive.map(p => p.name), items: topclassPromotions.items },
         giasu: { periods: giasuPromotions.periods, activePeriods: gsActive.map(p => p.name), items: giasuPromotions.items },
         coding: { periods: codingPromotions.periods, activePeriods: coActive.map(p => p.name), items: codingPromotions.items },
+        mentor: { periods: mentorPromotions.periods, activePeriods: meActive.map(p => p.name), items: mentorPromotions.items },
         vact: { periods: vactPromotions.periods, activePeriods: vaActive.map(p => p.name), items: vactPromotions.items }
       }
     };
@@ -685,7 +699,8 @@ export const __test = {
   parseVactPromotions,
   parseTopuniPromotions,
   parseTopclassPromotions,
-  parseGiasuPromotions,
+  parseCodingPromotions,
+  parseMentorPromotions,
   forwardFillTopclass,
   getTopuniPromotions: (rows) => parseTopuniPromotions(rows)
 };
