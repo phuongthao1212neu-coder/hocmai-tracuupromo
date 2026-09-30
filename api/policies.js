@@ -21,7 +21,8 @@ function getTodayGMT7() {
 
 function parseDateRange(rangeStr) {
   if (!rangeStr || typeof rangeStr !== 'string') return { start: null, end: null };
-  const cleaned = rangeStr.replace(/^(Từ|Đến)\s+/i, '').trim();
+  // Chấp nhận cả "Từ 30/09/2026" (có space) lẫn "Từ30/09/2026" (sheet gõ thiếu space)
+  const cleaned = rangeStr.replace(/^(Từ|Đến)\s*/i, '').trim();
   const parts = cleaned.split('-').map(s => s.trim());
   if (parts.length < 2) return { start: null, end: null };
   const parseDate = (str, refYear) => {
