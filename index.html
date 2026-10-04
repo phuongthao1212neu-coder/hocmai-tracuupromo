@@ -659,9 +659,9 @@
         giftHtml = `<div class="tu-gift-row"><span class="tu-gift-badge">🎁 ${data.gift}</span></div>`;
       }
 
-      // Gia sư: DS role dùng code, TVV role dùng codeField
+      // Đại sứ dùng mã Cart cho Gia sư và Coding; Coding không có trường amsCode.
       let code = null;
-      if (cat === 'giasu' && ROLE === 'ds') {
+      if ((cat === 'giasu' || cat === 'coding') && ROLE === 'ds') {
         code = data.code;
       } else {
         code = data[codeField];
