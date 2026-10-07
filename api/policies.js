@@ -515,16 +515,66 @@ function getExamTokens(s) {
   return tokens;
 }
 
+// Chuẩn hoá text để so khớp: bỏ dấu, lowercase, gộp khoảng trắng
+function normKeyText(s) {
+  return String(s || '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+}
+
+// Cấp học ghi trong tên: "lớp 2" / "lớp 3" → '2' / '3' (null nếu không ghi rõ)
+// Cần thiết để KHÔNG trộn ưu đãi giữa lớp 2 và lớp 3 (cùng giá, cùng kỳ thi).
+function getGradeToken(s) {
+  const m = normKeyText(s).match(/lop\s*(\d+)/);
+  return m ? m[1] : null;
+}
+
+// Loại gói ghi trong tên: 'lotrinh_s' (Lộ trình S) | 'goi_vip' (Gói VIP) | 'goi_s' (Gói S) | null
+// Cần thiết để KHÔNG trộn "Lộ trình S - HSA" (lớp cũ, 4tr) với "Giải pháp HSA - lớp 3 - Gói S" (cùng giá).
+function getPackageToken(s) {
+  const t = normKeyText(s);
+  if (/\blo trinh s\b/.test(t)) return 'lotrinh_s';
+  if (/\bgoi vip\b/.test(t)) return 'goi_vip';
+  if (/\bgoi s\b/.test(t)) return 'goi_s';
+  return null;
+}
+
+// Trả về ĐIỂM khớp (0 = không khớp, càng cao càng chắc) để khi nhiều dòng promo
+// cùng giá/cùng kỳ thi thì chọn đúng dòng (VD: VIP HSA lớp 2 ≠ HSA lớp 3 - Gói VIP).
 function matchTopuniCatalog(cat, pro) {
-  if (Number(cat.listPrice) <= 0 || Number(cat.listPrice) !== Number(pro.listPrice)) return false;
+  if (Number(cat.listPrice) <= 0 || Number(cat.listPrice) !== Number(pro.listPrice)) return 0;
+  const proText = (pro.packageName || '') + ' ' + (pro.productName || '');
   const catTokens = getExamTokens(cat.name);
-  const proTokens = getExamTokens((pro.packageName || '') + ' ' + (pro.productName || ''));
+  const proTokens = getExamTokens(proText);
   // Không có token kỳ thi ở 1 phía → fallback match theo giá (giữ nguyên hành vi cũ)
-  if (catTokens.length === 0 || proTokens.length === 0) return true;
   // Promo bao phủ toàn bộ kỳ thi (VD "Chọn 1 trong các kỳ thi: TN THPT/TSA/HSA/QDA") → match mọi biến thể
-  if (proTokens.length >= 4) return true;
-  // Promo chỉ áp dụng cho 1 kỳ thi cụ thể → phải trùng kỳ thi (VD VIP HSA lớp 2 ≠ VIP TSA lớp 2)
-  return proTokens.some(t => catTokens.includes(t));
+  if (catTokens.length > 0 && proTokens.length > 0 && proTokens.length < 4) {
+    // Promo chỉ áp dụng cho 1 kỳ thi cụ thể → phải trùng kỳ thi (VD VIP HSA lớp 2 ≠ VIP TSA lớp 2)
+    if (!proTokens.some(t => catTokens.includes(t))) return 0;
+  }
+
+  let score = 10;
+
+  // Cấp học: nếu CẢ HAI phía đều ghi rõ cấp → bắt buộc trùng
+  const catGrade = getGradeToken(cat.name);
+  const proGrade = getGradeToken(proText);
+  if (catGrade && proGrade) {
+    if (catGrade !== proGrade) return 0;
+    score += 5;
+  } else if (!catGrade && !proGrade) {
+    score += 2;
+  }
+
+  // Loại gói: nếu CẢ HAI phía đều ghi rõ loại gói → bắt buộc trùng
+  const catPkg = getPackageToken(cat.name);
+  const proPkg = getPackageToken(proText);
+  if (catPkg && proPkg) {
+    if (catPkg !== proPkg) return 0;
+    score += 4;
+  } else if (!catPkg && !proPkg) {
+    score += 3;
+  }
+
+  return score;
 }
 function matchTopclassCatalog(cat, pro) {
   if (!pro.productType || !pro.feePackage) return false;
@@ -563,16 +613,32 @@ function matchCodingCatalog(cat, pro) {
     && Number(cat.listPrice) === Number(pro.listPrice);
 }
 
+// matchFn có thể trả boolean (true/false) hoặc số điểm khớp (0 = không khớp).
+function matchScoreOf(result) {
+  if (result === true) return 1;
+  if (!result) return 0;
+  const n = Number(result);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function enrichCatalogWithPromotions(catalogItems, promotionItems, matchFn) {
   for (const cat of catalogItems) {
     cat.promotions = {};
+    // Điểm khớp tốt nhất cho từng ô (kỳ + đối tượng): ưu tiên dòng chắc chắn hơn,
+    // bằng điểm thì giữ hành vi cũ (dòng sau ghi đè) để không đổi các danh mục khác.
+    const bestScore = {};
     for (const pro of promotionItems) {
-      if (!matchFn(cat, pro)) continue;
+      const score = matchScoreOf(matchFn(cat, pro));
+      if (score <= 0) continue;
       if (!pro.promotions) continue;
       for (const [periodName, seg] of Object.entries(pro.promotions)) {
         if (!cat.promotions[periodName]) cat.promotions[periodName] = {};
         for (const [custType, data] of Object.entries(seg)) {
-          cat.promotions[periodName][custType] = data;
+          const key = periodName + '::' + custType;
+          if (bestScore[key] === undefined || score >= bestScore[key]) {
+            cat.promotions[periodName][custType] = data;
+            bestScore[key] = score;
+          }
         }
       }
     }

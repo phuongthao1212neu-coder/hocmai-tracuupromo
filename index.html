@@ -1158,7 +1158,8 @@
               for (var w2 = 0; w2 < promoItems.length; w2++) {
                 var pw2 = promoItems[w2];
                 var pn2 = pw2.packageName || '';
-                if (pn2.indexOf('VIP 1 kỳ thi riêng') >= 0 && pn2.indexOf('Luyện đề') >= 0) vipLop2Combo = pw2;
+                // Chỉ khớp dòng combo "lớp 2" (KHÔNG khớp dòng "...- lớp 3 + Luyện đề" cũng chứa "VIP 1 kỳ thi riêng")
+                if (pn2.indexOf('VIP 1 kỳ thi riêng') >= 0 && pn2.indexOf('lớp 2') >= 0 && pn2.indexOf('Luyện đề') >= 0) vipLop2Combo = pw2;
               }
               if (vipLop2Combo) {
                       var vlcBest = getBestPromoForItem(vipLop2Combo, activePeriods, custType, codeField);
