@@ -158,22 +158,42 @@ bugCa.forEach((i) => {
 
 console.log(`\n=== KẾT QUẢ: ${pass} pass, ${fail} fail ===`);
 
-// 6) Kiểm tra frontend: trích điều kiện THẬT trong index.html để chọn dòng combo lớp 2,
-// rồi chạy trên danh sách packageName thật → chỉ được khớp DUY NHẤT dòng "lớp 2".
+// 6) Kiểm tra frontend: trích các điều kiện THẬT trong index.html (chọn dòng combo lớp 2 / lớp 3)
+// rồi chạy trên danh sách packageName thật → mỗi điều kiện chỉ được khớp DUY NHẤT dòng của lớp đó.
 const idx = readFileSync(join(root, 'index.html'), 'utf8');
-const mCond = idx.match(/if \((.+)\)\s*vipLop2Combo = pw2;/);
-if (!mCond) {
-  console.log('FAIL không trích được điều kiện combo lớp 2 trong index.html');
-  fail++;
-} else {
-  const condSrc = mCond[1];
-  const cond = new Function('pn2', `return (${condSrc});`);
-  const matched = proRaw.map(([pn], i) => (cond(pn) ? i : -1)).filter((i) => i >= 0);
-  const okCombo = matched.length === 1 && matched[0] === 5;
-  okCombo ? pass++ : fail++;
-  console.log(`\n=== Frontend: dòng combo khớp điều kiện "lớp 2" → promo index [${matched.join(', ')}] (chỉ được là [5]) ===`);
-  console.log(`${okCombo ? 'OK  ' : 'FAIL'} combo lớp 2 chọn đúng dòng, mã ngày thường = ${proRaw[5][3]}`);
+
+function extractCond(src, varName, assignVar) {
+  const re = new RegExp('if \\((.+)\\)\\s*' + varName + ' = ' + assignVar + ';');
+  const m = src.match(re);
+  return m ? m[1] : null;
 }
+
+const COMBO_NORMAL_CODE = { lop2: 'TP10TDLDJ36B', lop3: 'TP10VIPLD64M1' };
+const COMBO_EXPECT_IDX = { lop2: 5, lop3: 22 };
+[['lop2', 'vipLop2Combo', 'pw2'], ['lop3', 'vipLop3Combo', 'pw3']].forEach(([key, varName, assignVar]) => {
+  const condSrc = extractCond(idx, varName, assignVar);
+  if (!condSrc) {
+    console.log(`FAIL không trích được điều kiện combo ${key} trong index.html`);
+    fail++;
+    return;
+  }
+  const cond = new Function('pn2', 'pn3', `return (${condSrc});`);
+  const matched = proRaw.map(([pn], i) => (cond(pn, pn) ? i : -1)).filter((i) => i >= 0);
+  const ok = matched.length === 1 && matched[0] === COMBO_EXPECT_IDX[key];
+  ok ? pass++ : fail++;
+  console.log(`\n=== Frontend combo ${key}: khớp promo index [${matched.join(', ')}] (chỉ được là [${COMBO_EXPECT_IDX[key]}]) ===`);
+  console.log(`${ok ? 'OK  ' : 'FAIL'} combo ${key} chọn đúng dòng, mã ngày thường = ${proRaw[COMBO_EXPECT_IDX[key]][3]} (kỳ vọng ${COMBO_NORMAL_CODE[key]})`);
+});
+
+// 7) Kiểm tra bucket phân loại: VIP lớp 3 (Gói VIP) phải vào nhánh combo, Gói S lớp 3 thì KHÔNG
+const lop3VipName = 'giải pháp hasa - định lượng, định tính, tiếng anh - lớp 3 - gói vip - năm học 2026-2027';
+const lop3SName = 'giải pháp hasa - định lượng, định tính, tiếng anh - lớp 3 - gói s - năm học 2026-2027';
+const bucketLop3Vip = lop3VipName.indexOf('vip') >= 0 && lop3VipName.indexOf('lớp 3') >= 0;
+const bucketLop3S = lop3SName.indexOf('vip') >= 0 && lop3SName.indexOf('lớp 3') >= 0;
+const okBucket = bucketLop3Vip === true && bucketLop3S === false;
+okBucket ? pass++ : fail++;
+console.log(`\n=== Bucket phân loại lớp 3 ===`);
+console.log(`${okBucket ? 'OK  ' : 'FAIL'} Gói VIP lớp 3 → combo: ${bucketLop3Vip} (phải true); Gói S lớp 3 → KHÔNG combo: ${bucketLop3S} (phải false)`);
 
 console.log(`\n=== TỔNG: ${pass} pass, ${fail} fail ===`);
 process.exitCode = fail === 0 ? 0 : 1;
